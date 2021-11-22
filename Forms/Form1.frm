@@ -9,18 +9,26 @@ Begin VB.Form Form1
    ScaleHeight     =   7455
    ScaleWidth      =   10935
    StartUpPosition =   3  'Windows-Standard
+   Begin VB.CommandButton Command1 
+      Caption         =   "SavePictures"
+      Height          =   375
+      Left            =   7440
+      TabIndex        =   16
+      Top             =   0
+      Width           =   1335
+   End
    Begin VB.CommandButton BtnInfo 
       Caption         =   "Info"
       Height          =   375
-      Left            =   8880
+      Left            =   6000
       TabIndex        =   15
-      Top             =   0
+      Top             =   360
       Width           =   1335
    End
    Begin VB.CommandButton BtnClear 
       Caption         =   "Clear"
       Height          =   375
-      Left            =   7440
+      Left            =   6000
       TabIndex        =   12
       Top             =   0
       Width           =   1335
@@ -28,9 +36,9 @@ Begin VB.Form Form1
    Begin VB.CommandButton BtnPrintToPDF 
       Caption         =   "Create PDF"
       Height          =   375
-      Left            =   6000
+      Left            =   4560
       TabIndex        =   11
-      Top             =   0
+      Top             =   360
       Width           =   1335
    End
    Begin VB.CommandButton BtnSet 
@@ -175,30 +183,40 @@ Private Sub BtnPrintToPDF_Click()
         End If
     Next
     
-    Dim dpi    As Single:    dpi = 96
-    Dim mmpi   As Single:   mmpi = 25.4
-    Dim DA4_w  As Single:  DA4_w = 210
+    Dim dpi    As Single:    dpi = 96   'dots per inch
+    Dim ppi    As Single:    ppi = 72   'point per inch
+    Dim mmpi   As Single:   mmpi = 25.4 'mm per inch
+    Dim DA4_w  As Single:  DA4_w = 210  'mm
+    Dim DA4_h  As Single:  DA4_h = 297  'mm
     Dim marg_L As Single: marg_L = 0 '5
     Dim marg_R As Single: marg_R = 0 '5
-    Dim w      As Single:      w = DA4_w - marg_L - marg_R
+    Dim wA4    As Single:    wA4 = DA4_w - marg_L - marg_R
     Dim TPPX   As Single:   TPPX = Screen.TwipsPerPixelX
+    Dim TPPY   As Single:   TPPX = Screen.TwipsPerPixelY
     
-    Dim sc As Single
+    Dim sc_w As Single
+    Dim sc_h As Single
 Try: On Error GoTo Catch
     With Printer
         '.ScaleMode = ScaleModeConstants.vbMillimeters
         '.CurrentX = 5
         '.CurrentY = 5
         '.ScaleMode = ScaleModeConstants.vbPixels
-        
+        Dim w As Long
+        Dim h As Long
         Dim pic As StdPicture
         Dim c As Long: c = PicList.Count
         For i = 1 To PicList.Count
             Set pic = PicList.Item(i)
-            sc = w / (((pic.Width / TPPX) / dpi) * mmpi)
+            w = PBScreenshot.ScaleX(pic.Width, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
+            h = PBScreenshot.ScaleY(pic.Height, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
+            
+            sc_w = wA4 / ((w / dpi) * mmpi)
+            'sc_h = wA4 / ((h / dpi) * mmpi)
             'Debug.Print sc
-            sc = 1.184628041
-            .PaintPicture pic, 0, 0, pic.Width * sc, pic.Height * sc, 0, 0, pic.Width, pic.Height
+            'sc = 1.184628041
+            Debug.Print pic.Width
+            .PaintPicture pic, 0, 0, pic.Width * sc_w, pic.Height * sc_w, 0, 0, pic.Width, pic.Height
             If i < c Then
                 .NewPage
             End If
@@ -208,6 +226,14 @@ Try: On Error GoTo Catch
     Exit Sub
 Catch:
     If MsgBox("Retry?", vbInformation Or vbRetryCancel) = vbRetry Then GoTo Try
+End Sub
+
+Private Sub Command1_Click()
+    Dim i As Long
+    For i = 0 To LBPicList.ListCount - 1
+        LBPicList.ListIndex = i
+        SavePicture PBScreenshot.Image, FNm & "\Bild_" & CStr(i) & ".bmp"
+    Next
 End Sub
 
 Private Sub Form_Load()
