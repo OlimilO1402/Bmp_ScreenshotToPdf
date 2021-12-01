@@ -20,11 +20,11 @@ Option Explicit
 'http://www.activevb.de/tipps/vb6tipps/tipp0311.html
 'VB 5/6-Tipp 0311: Gezielten Snapshot erstellen
 
-#If VBA7 = 0 Then
-    Public Enum LongPtr
-        [_]
-    End Enum
-#End If
+'#If VBA7 = 0 Then
+'    Public Enum LongPtr
+'        [_]
+'    End Enum
+'#End If
 
 Private Declare Function WindowFromPoint Lib "user32" (ByVal xPoint As Long, ByVal yPoint As Long) As LongPtr
 
@@ -75,12 +75,12 @@ Private Declare Function BitBlt Lib "gdi32" ( _
     ByVal Src_hDC As LongPtr, ByVal xSrc As Long, ByVal ySrc As Long, ByVal dwRop As Long) As Long
 'follows: dst = src
 
-Private Declare Function ReleaseDC Lib "user32" (ByVal hWnd As LongPtr, ByVal hdc As LongPtr) As Long 'Ptr
+Private Declare Function ReleaseDC Lib "user32" (ByVal hWnd As LongPtr, ByVal hDC As LongPtr) As Long 'Ptr
 
 Private Const SRCCOPY As Long = &HCC0020
 
-Private m_SrcHWnd As LongPtr
-Private m_SrcHDC  As LongPtr
+Private m_SrchWnd As LongPtr
+Private m_SrchDC  As LongPtr
 Private m_MaxRect As WinAPIRect
 Private m_SrcRect As WinAPIRect
 
@@ -91,15 +91,15 @@ Private m_DstHDC  As LongPtr
 Private m_DstRect As WinAPIRect
 
 Private Sub Class_Initialize()
-    m_SrcHWnd = GetDesktopWindow
+    m_SrchWnd = GetDesktopWindow
     'm_SrcHDC = GetDC(m_SrcHWnd)
-    Dim hr As Long: hr = GetWindowRect(m_SrcHWnd, m_MaxRect)
+    Dim hr As Long: hr = GetWindowRect(m_SrchWnd, m_MaxRect)
     m_SrcRect = m_MaxRect
     m_DstRect = m_SrcRect
 End Sub
 
 Private Sub Class_Terminate()
-    Dim hr As Long: hr = ReleaseDC(m_SrcHWnd, m_SrcHDC)
+    Dim hr As Long: hr = ReleaseDC(m_SrchWnd, m_SrchDC)
 End Sub
 
 Friend Sub New_(aPB As PictureBox, SrcRect As WinAPIRect)
@@ -113,16 +113,16 @@ Private Function Screenshot(aPB As PictureBox, SrcRect As WinAPIRect) As Screens
 End Function
 
 Public Property Get HandleWnd() As LongPtr
-    HandleWnd = m_SrcHWnd
+    HandleWnd = m_SrchWnd
 End Property
 Public Property Let HandleWnd(ByVal Value As LongPtr)
-    m_SrcHWnd = Value
+    m_SrchWnd = Value
 End Property
 
 Public Function Shot() As StdPicture
     
     Dim hr As Long
-    m_DstPB.AutoRedraw = True
+    'm_DstPB.AutoRedraw = False 'True
     
     'm_DstHDC = GetDC(m_DstPB.hwnd)
     'm_DstHDC = m_DstPB.hdc
@@ -134,7 +134,7 @@ Public Function Shot() As StdPicture
     m_DstPB.Width = SrcRectWidth * Screen.TwipsPerPixelX
     m_DstPB.Height = SrcRectHeight * Screen.TwipsPerPixelY
     
-    m_DstHDC = m_DstPB.hdc
+    m_DstHDC = m_DstPB.hDC
     
     'hr = GetWindowRect(m_DstHWnd, m_DstRect)
     
@@ -143,20 +143,20 @@ Public Function Shot() As StdPicture
     
     'hr = StretchBlt(m_DstHDC, m_DstRect.Left, m_DstRect.Top, m_SrcRect.Width, m_SrcRect.Height, _
     '                m_SrcHDC, m_SrcRect.Left, m_SrcRect.Top, m_SrcRect.Width, m_SrcRect.Height, SRCCOPY)
-    m_SrcHDC = GetDC(m_SrcHWnd)
+    m_SrchDC = GetDC(m_SrchWnd)
     
     hr = StretchBlt(m_DstHDC, 0, 0, SrcRectWidth, SrcRectHeight, _
-                    m_SrcHDC, m_SrcRect.Left, m_SrcRect.Top, SrcRectWidth, SrcRectHeight, SRCCOPY)
+                    m_SrchDC, m_SrcRect.Left, m_SrcRect.Top, SrcRectWidth, SrcRectHeight, SRCCOPY)
     
     'hr = BitBlt(m_DstHDC, 0, 0, m_SrcRect.Width, m_SrcRect.Height, _
     '            m_SrcHDC, m_SrcRect.Left, m_SrcRect.Top, m_SrcRect.Width, m_SrcRect.Height, SRCCOPY)
     
     
     Set Shot = m_DstPB.Image
-    hr = ReleaseDC(m_SrcHWnd, m_SrcHDC)
+    hr = ReleaseDC(m_SrchWnd, m_SrchDC)
     'hr = ReleaseDC(m_DstHWnd, m_DstHDC)
-    m_DstPB.Refresh
-    m_DstPB.AutoRedraw = False
+    'm_DstPB.Refresh
+    'm_DstPB.AutoRedraw = True 'False
 End Function
 
 Private Function Max(V1, V2)

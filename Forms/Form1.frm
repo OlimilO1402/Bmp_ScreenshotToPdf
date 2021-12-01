@@ -2,9 +2,10 @@ VERSION 5.00
 Begin VB.Form Form1 
    Caption         =   "Form1"
    ClientHeight    =   7455
-   ClientLeft      =   120
-   ClientTop       =   465
+   ClientLeft      =   225
+   ClientTop       =   870
    ClientWidth     =   10935
+   Icon            =   "Form1.frx":0000
    LinkTopic       =   "Form1"
    ScaleHeight     =   7455
    ScaleWidth      =   10935
@@ -81,9 +82,9 @@ Begin VB.Form Form1
    End
    Begin VB.ListBox LBPicList 
       Height          =   6300
-      ItemData        =   "Form1.frx":0000
+      ItemData        =   "Form1.frx":1782
       Left            =   0
-      List            =   "Form1.frx":0002
+      List            =   "Form1.frx":1784
       TabIndex        =   10
       Top             =   840
       Width           =   2175
@@ -156,6 +157,18 @@ Begin VB.Form Form1
       Top             =   30
       Width           =   375
    End
+   Begin VB.Menu mnuPopUp 
+      Caption         =   "mnuPopUp"
+      Begin VB.Menu mnuListMoveUp 
+         Caption         =   "Move up ^"
+      End
+      Begin VB.Menu mnuListMoveDown 
+         Caption         =   "Move down v"
+      End
+      Begin VB.Menu mnuListDeleteItem 
+         Caption         =   "Delete"
+      End
+   End
 End
 Attribute VB_Name = "Form1"
 Attribute VB_GlobalNameSpace = False
@@ -166,9 +179,21 @@ Option Explicit
 Private m_Screen As Screenshot
 Private FNm As String
 Private i As Long
-Private PicList As Collection
+'Private PicList As Collection
+Private PicList As List
 
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As WinAPIPoint) As Long
+
+Private Sub Form_Load()
+    Set PicList = MNew.List(vbObject)
+    FNm = "C:\TestDir\"
+    TxtL.Text = 1
+    TxtT.Text = 84
+    TxtW.Text = 672 'CLng(905 * CDbl(210) / CDbl(297))
+    TxtH.Text = 913
+    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
+    BtnClear_Click
+End Sub
 
 Private Sub BtnInfo_Click()
     MsgBox App.CompanyName & " " & App.EXEName & " v" & App.Major & "." & App.Minor & "." & App.Revision & vbCrLf & App.FileDescription
@@ -236,28 +261,63 @@ Private Sub Command1_Click()
     Next
 End Sub
 
-Private Sub Form_Load()
-    FNm = "C:\TestDir\"
-    TxtL.Text = 1
-    TxtT.Text = 84
-    TxtW.Text = 672 'CLng(905 * CDbl(210) / CDbl(297))
-    TxtH.Text = 913
-    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
-    BtnClear_Click
-End Sub
-
 Private Sub BtnGetWnd_Click()
     Timer1.Enabled = Not Timer1.Enabled
 End Sub
 
 Private Sub Form_Resize()
-    Dim L As Single: L = 0
-    Dim T As Single: T = LBPicList.Top
+    Dim l As Single: l = 0
+    Dim t As Single: t = LBPicList.Top
     Dim w As Single: w = LBPicList.Width
-    Dim h As Single: h = Me.ScaleHeight - T
-    If w > 0 And h > 0 Then LBPicList.Move L, T, w, h
+    Dim h As Single: h = Me.ScaleHeight - t
+    If w > 0 And h > 0 Then LBPicList.Move l, t, w, h
 End Sub
 
+Private Sub LBPicList_MouseDown(Button As Integer, Shift As Integer, x As Single, y As Single)
+    If LBPicList.ListCount > 0 Then
+        If Button = MouseButtonConstants.vbRightButton Then
+            PopupMenu mnuPopUp
+        End If
+    End If
+End Sub
+
+Private Sub mnuListMoveUp_Click()
+    Dim c As Long: c = LBPicList.ListCount
+    If c = 1 Then Exit Sub
+    Dim i As Long: i = LBPicList.ListIndex
+    If i <= 0 Or (c - 1) < i Then Exit Sub
+    PicList.MoveUp i
+    LBPicList_MoveUp i
+    LBPicList.ListIndex = i - 1
+End Sub
+Private Sub mnuListMoveDown_Click()
+    Dim c As Long: c = LBPicList.ListCount
+    If c = 1 Then Exit Sub
+    Dim i As Long: i = LBPicList.ListIndex
+    If i < 0 Or (c - 1) <= i Then Exit Sub
+    PicList.MoveDown i
+    LBPicList_MoveDown i
+    LBPicList.ListIndex = i + 1
+End Sub
+Private Sub mnuListDeleteItem_Click()
+    Dim c As Long: c = LBPicList.ListCount
+    Dim i As Long: i = LBPicList.ListIndex
+    If i < 0 Or (c - 1) < i Then Exit Sub
+    PicList.Remove i
+    LBPicList.RemoveItem i
+End Sub
+
+Private Sub LBPicList_MoveUp(ByVal i As Long)
+    LBPicList_Swap i - 1, i
+End Sub
+Private Sub LBPicList_MoveDown(ByVal i As Long)
+    LBPicList_Swap i, i + 1
+End Sub
+Private Sub LBPicList_Swap(ByVal i1 As Long, ByVal i2 As Long)
+    Dim tmp As String: tmp = LBPicList.List(i1)
+    LBPicList.List(i1) = LBPicList.List(i2)
+    LBPicList.List(i2) = tmp
+End Sub
 Private Sub Timer1_Timer()
     Dim p As WinAPIPoint
     Dim hr As Long: hr = GetCursorPos(p)
@@ -285,13 +345,14 @@ Private Sub BtnScreenshot_Click()
 End Sub
 
 Private Sub BtnClear_Click()
-    Set PicList = New Collection
+    'Set PicList = mNew Collection
+    PicList.Clear
     i = 0
     LBPicList.Clear
-    PBScreenshot.AutoRedraw = False
+    'PBScreenshot.AutoRedraw = False
     Set PBScreenshot.Picture = Nothing
     PBScreenshot.Cls
-    PBScreenshot.AutoRedraw = True
+    'PBScreenshot.AutoRedraw = True
 End Sub
 
 Private Function GetWinAPIRect() As WinAPIRect
@@ -303,15 +364,15 @@ Private Function GetWinAPIRect() As WinAPIRect
 End Function
 
 Private Sub LBPicList_Click()
-    PBScreenshot.Cls
-    PBScreenshot.AutoRedraw = False
+    'PBScreenshot.Cls
+    'PBScreenshot.AutoRedraw = False
     Dim pic As StdPicture
     Dim i As Long: i = LBPicList.ListIndex
-    Set pic = PicList.Item(i + 1)
+    Set pic = PicList.Item(i)
     If pic Is Nothing Then
         MsgBox "pic is nothing"
     End If
     Set PBScreenshot.Picture = pic
     PBScreenshot.Refresh
-    PBScreenshot.AutoRedraw = True
+    'PBScreenshot.AutoRedraw = True
 End Sub
