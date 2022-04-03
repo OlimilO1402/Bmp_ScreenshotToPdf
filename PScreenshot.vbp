@@ -1,12 +1,15 @@
 Type=Exe
 Form=Forms\Form1.frm
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\SysWOW64\stdole2.tlb#OLE Automation
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\SysWow64\stdole2.tlb#OLE Automation
 Class=Screenshot; Classes\Screenshot.cls
 Module=MwinAPI; Modules\Module1.bas
 Module=MNew; Modules\MNew.bas
 Class=SScreen; Classes\SScreen.cls
 Class=StdPicBmp; Classes\StdPicBmp.cls
 Class=List; ..\List_GenericNLinq\Classes\List.cls
+Class=OpenFileDialog; ..\Win_Dialogs\Classes\OpenFileDialog.cls
+Class=SaveFileDialog; ..\Win_Dialogs\Classes\SaveFileDialog.cls
+Module=MErr; ..\Err_CorrectErrorHandling\Modules\MErr.bas
 ResFile32="Resources\MyRes.res"
 IconForm="Form1"
 Startup="Form1"

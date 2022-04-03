@@ -3,14 +3,14 @@ Begin VB.Form Form1
    Caption         =   "Form1"
    ClientHeight    =   7455
    ClientLeft      =   225
-   ClientTop       =   870
+   ClientTop       =   570
    ClientWidth     =   10935
    Icon            =   "Form1.frx":0000
    LinkTopic       =   "Form1"
    ScaleHeight     =   7455
    ScaleWidth      =   10935
    StartUpPosition =   3  'Windows-Standard
-   Begin VB.CommandButton Command1 
+   Begin VB.CommandButton BtnSavePictures 
       Caption         =   "SavePictures"
       Height          =   375
       Left            =   7440
@@ -51,10 +51,11 @@ Begin VB.Form Form1
       Width           =   1335
    End
    Begin VB.CommandButton BtnGetWnd 
-      Caption         =   "GetWnd"
+      Caption         =   "Set Wnd Rect"
       Height          =   375
       Left            =   3120
       TabIndex        =   14
+      ToolTipText     =   "Move mouse over window & hit Enter"
       Top             =   0
       Width           =   1335
    End
@@ -159,6 +160,7 @@ Begin VB.Form Form1
    End
    Begin VB.Menu mnuPopUp 
       Caption         =   "mnuPopUp"
+      Visible         =   0   'False
       Begin VB.Menu mnuListMoveUp 
          Caption         =   "Move up ^"
       End
@@ -207,7 +209,7 @@ Private Sub BtnPrintToPDF_Click()
             Exit For
         End If
     Next
-    
+    If Printer Is Nothing Then Exit Sub
     Dim dpi    As Single:    dpi = 96   'dots per inch
     Dim ppi    As Single:    ppi = 72   'point per inch
     Dim mmpi   As Single:   mmpi = 25.4 'mm per inch
@@ -250,10 +252,10 @@ Try: On Error GoTo Catch
     End With
     Exit Sub
 Catch:
-    If MsgBox("Retry?", vbInformation Or vbRetryCancel) = vbRetry Then GoTo Try
+    'If MsgBox("Retry?", vbInformation Or vbRetryCancel) = vbRetry Then GoTo Try
 End Sub
 
-Private Sub Command1_Click()
+Private Sub BtnSavePictures_Click()
     Dim i As Long
     For i = 0 To LBPicList.ListCount - 1
         LBPicList.ListIndex = i
@@ -261,19 +263,15 @@ Private Sub Command1_Click()
     Next
 End Sub
 
-Private Sub BtnGetWnd_Click()
-    Timer1.Enabled = Not Timer1.Enabled
-End Sub
-
 Private Sub Form_Resize()
-    Dim l As Single: l = 0
-    Dim t As Single: t = LBPicList.Top
+    Dim L As Single: L = 0
+    Dim T As Single: T = LBPicList.Top
     Dim w As Single: w = LBPicList.Width
-    Dim h As Single: h = Me.ScaleHeight - t
-    If w > 0 And h > 0 Then LBPicList.Move l, t, w, h
+    Dim h As Single: h = Me.ScaleHeight - T
+    If w > 0 And h > 0 Then LBPicList.Move L, T, w, h
 End Sub
 
-Private Sub LBPicList_MouseDown(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub LBPicList_MouseDown(Button As Integer, Shift As Integer, X As Single, y As Single)
     If LBPicList.ListCount > 0 Then
         If Button = MouseButtonConstants.vbRightButton Then
             PopupMenu mnuPopUp
@@ -318,6 +316,11 @@ Private Sub LBPicList_Swap(ByVal i1 As Long, ByVal i2 As Long)
     LBPicList.List(i1) = LBPicList.List(i2)
     LBPicList.List(i2) = tmp
 End Sub
+
+Private Sub BtnGetWnd_Click()
+    Timer1.Enabled = Not Timer1.Enabled
+End Sub
+
 Private Sub Timer1_Timer()
     Dim p As WinAPIPoint
     Dim hr As Long: hr = GetCursorPos(p)
@@ -356,11 +359,11 @@ Private Sub BtnClear_Click()
 End Sub
 
 Private Function GetWinAPIRect() As WinAPIRect
-    Dim x As Long: x = CLng(TxtL.Text)
+    Dim X As Long: X = CLng(TxtL.Text)
     Dim y As Long: y = CLng(TxtT.Text)
     Dim w As Long: w = CLng(TxtW.Text)
     Dim h As Long: h = CLng(TxtH.Text)
-    GetWinAPIRect = MNew.WinAPIRect(x, y, w, h)
+    GetWinAPIRect = MNew.WinAPIRect(X, y, w, h)
 End Function
 
 Private Sub LBPicList_Click()
