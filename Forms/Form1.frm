@@ -187,6 +187,7 @@ Private PicList As List
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As WinAPIPoint) As Long
 
 Private Sub Form_Load()
+    Me.Caption = App.EXEName & " v" & App.Major & "." & App.Minor & "." & App.Revision
     Set PicList = MNew.List(vbObject)
     FNm = "C:\TestDir\"
     TxtL.Text = 1
