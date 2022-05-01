@@ -210,7 +210,10 @@ Private Sub BtnPrintToPDF_Click()
             Exit For
         End If
     Next
-    If Printer Is Nothing Then Exit Sub
+    If Printer Is Nothing Then
+        MsgBox "Printer not found: 'Microsoft Print to PDF'"
+        Exit Sub
+    End If
     Dim dpi    As Single:    dpi = 96   'dots per inch
     Dim ppi    As Single:    ppi = 72   'point per inch
     Dim mmpi   As Single:   mmpi = 25.4 'mm per inch
@@ -225,7 +228,7 @@ Private Sub BtnPrintToPDF_Click()
     Dim sc_w As Single
     Dim sc_h As Single
 Try: On Error GoTo Catch
-    With Printer
+    'With Printer
         '.ScaleMode = ScaleModeConstants.vbMillimeters
         '.CurrentX = 5
         '.CurrentY = 5
@@ -243,14 +246,16 @@ Try: On Error GoTo Catch
             'sc_h = wA4 / ((h / dpi) * mmpi)
             'Debug.Print sc
             'sc = 1.184628041
-            Debug.Print pic.Width
-            .PaintPicture pic, 0, 0, pic.Width * sc_w, pic.Height * sc_w, 0, 0, pic.Width, pic.Height
+            'Debug.Print pic.Width
+            Printer.PaintPicture pic, 0, 0, pic.Width * sc_w, pic.Height * sc_w, 0, 0, pic.Width, pic.Height
             If i < c Then
-                .NewPage
+                Printer.NewPage
             End If
         Next
-        .EndDoc
-    End With
+        Printer.EndDoc
+        '.KillDoc
+    'End With
+    'Set Printer = Nothing
     Exit Sub
 Catch:
     'If MsgBox("Retry?", vbInformation Or vbRetryCancel) = vbRetry Then GoTo Try
