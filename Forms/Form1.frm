@@ -4,11 +4,12 @@ Begin VB.Form FMain
    ClientHeight    =   7455
    ClientLeft      =   225
    ClientTop       =   570
-   ClientWidth     =   11055
+   ClientWidth     =   11175
    Icon            =   "Form1.frx":0000
    LinkTopic       =   "Form1"
-   ScaleHeight     =   7455
-   ScaleWidth      =   11055
+   ScaleHeight     =   497
+   ScaleMode       =   3  'Pixel
+   ScaleWidth      =   745
    StartUpPosition =   3  'Windows-Standard
    Begin VB.CommandButton BtnInfo 
       Caption         =   "Info"
@@ -113,10 +114,10 @@ Begin VB.Form FMain
       Height          =   6255
       Left            =   2160
       ScaleHeight     =   6195
-      ScaleWidth      =   8355
+      ScaleWidth      =   8835
       TabIndex        =   1
       Top             =   840
-      Width           =   8415
+      Width           =   8895
    End
    Begin VB.Label Label4 
       Caption         =   "Width"
@@ -174,38 +175,65 @@ Option Explicit
 Private m_Screen As Screenshot
 Private FNm As String
 Private i As Long
-'Private PicList As Collection
-Private PicList As List
+Private m_PicList   As List ' As Collection
 Private m_FocusRect As FocusRect
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As WinAPIPoint) As Long
 
+Private bInit As Boolean
+
+'the class SScreen has a function Shot that returns a Screenshot-object
+'m_Screen.Shot As Screenshot
+'Screenshot.Picture
+'What data does it store?
+'What data does Screen store?
+'What data does Screenshot store?
+'The screen stores the source-hwnd
+'so screen is basically the desktop so it has (GetDesktopWindow) Dektop_hWnd and Desktop_hDC
+'the screenshot stores the source-rect and returns an StdPicBmp-object
+'every time the screenshot-button is pressed, a screenshot-object is created
+'screen has the function
 Private Sub Form_Load()
+    bInit = True
     Me.Caption = App.EXEName & " v" & App.Major & "." & App.Minor & "." & App.Revision
-    Set PicList = MNew.List(vbObject)
+    Set m_PicList = MNew.List(vbObject)
     FNm = "C:\TestDir\"
     TxtL.Text = 1
     TxtT.Text = 84
     TxtW.Text = 672 'CLng(905 * CDbl(210) / CDbl(297))
     TxtH.Text = 913
-    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
+    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWndRect) ' GetWinAPIRect)
     Set m_FocusRect = MNew.FocusRect(MwinAPI.GetDC(0))
     BtnClear_Click
+    bInit = False
+End Sub
+
+Private Sub Form_Resize()
+    Dim L As Single: L = 0
+    Dim T As Single: T = LBPicList.Top
+    Dim W As Single: W = LBPicList.Width
+    Dim H As Single: H = Me.ScaleHeight - T
+    If W > 0 And H > 0 Then LBPicList.Move L, T, W, H
 End Sub
 
 Private Sub BtnInfo_Click()
     MsgBox App.CompanyName & " " & App.EXEName & " v" & App.Major & "." & App.Minor & "." & App.Revision & vbCrLf & App.FileDescription
 End Sub
 
-Private Sub BtnPrintToPDF_Click()
+Private Function SelectPrinter(ByVal PrinterName As String) As Printer
     Dim i As Long
     For i = 0 To Printers.Count - 1
-        If Printers(i).DeviceName = "Microsoft Print to PDF" Then
-            Set Printer = Printers(i)
+        If Printers(i).DeviceName = PrinterName Then '"Microsoft Print to PDF" Then
+            Set SelectPrinter = Printers(i)
             Exit For
         End If
     Next
+End Function
+
+Private Sub BtnPrintToPDF_Click()
+    Dim pn As String: pn = "Microsoft Print to PDF"
+    Set Printer = SelectPrinter(pn)
     If Printer Is Nothing Then
-        MsgBox "Printer not found: 'Microsoft Print to PDF'"
+        MsgBox "Printer not found: '" & pn & "'"
         Exit Sub
     End If
     Dim dpi    As Single:    dpi = 96   'dots per inch
@@ -227,22 +255,22 @@ Try: On Error GoTo Catch
         '.CurrentX = 5
         '.CurrentY = 5
         '.ScaleMode = ScaleModeConstants.vbPixels
-        Dim w As Long
-        Dim h As Long
+        Dim W As Long
+        Dim H As Long
         Dim pic As StdPicture
-        Dim c As Long: c = PicList.Count
-        For i = 0 To PicList.Count - 1
-            Set pic = PicList.Item(i)
-            w = PBScreenshot.ScaleX(pic.Width, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
-            h = PBScreenshot.ScaleY(pic.Height, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
+        Dim u As Long: u = m_PicList.Count - 1
+        For i = 0 To u
+            Set pic = m_PicList.Item(i)
+            W = PBScreenshot.ScaleX(pic.Width, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
+            H = PBScreenshot.ScaleY(pic.Height, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
             
-            sc_w = wA4 / ((w / dpi) * mmpi)
+            sc_w = wA4 / ((W / dpi) * mmpi)
             'sc_h = wA4 / ((h / dpi) * mmpi)
             'Debug.Print sc
             'sc = 1.184628041
             'Debug.Print pic.Width
             Printer.PaintPicture pic, 0, 0, pic.Width * sc_w, pic.Height * sc_w, 0, 0, pic.Width, pic.Height
-            If i < c Then
+            If i < u Then
                 Printer.NewPage
             End If
         Next
@@ -263,21 +291,13 @@ Private Sub BtnSavePictures_Click()
     Next
 End Sub
 
-Private Sub Form_Resize()
-    Dim L As Single: L = 0
-    Dim T As Single: T = LBPicList.Top
-    Dim w As Single: w = LBPicList.Width
-    Dim h As Single: h = Me.ScaleHeight - T
-    If w > 0 And h > 0 Then LBPicList.Move L, T, w, h
-End Sub
-
 Private Sub LBPicList_KeyDown(KeyCode As Integer, Shift As Integer)
     If KeyCode = KeyCodeConstants.vbKeyDelete Then
         mnuListDeleteItem_Click
     End If
 End Sub
 
-Private Sub LBPicList_MouseDown(Button As Integer, Shift As Integer, X As Single, y As Single)
+Private Sub LBPicList_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
     If LBPicList.ListCount > 0 Then
         If Button = MouseButtonConstants.vbRightButton Then
             PopupMenu mnuPopUp
@@ -290,7 +310,7 @@ Private Sub mnuListMoveUp_Click()
     If c = 1 Then Exit Sub
     Dim i As Long: i = LBPicList.ListIndex
     If i <= 0 Or (c - 1) < i Then Exit Sub
-    PicList.MoveUp i
+    m_PicList.MoveUp i
     LBPicList_MoveUp i
     LBPicList.ListIndex = i - 1
 End Sub
@@ -299,7 +319,7 @@ Private Sub mnuListMoveDown_Click()
     If c = 1 Then Exit Sub
     Dim i As Long: i = LBPicList.ListIndex
     If i < 0 Or (c - 1) <= i Then Exit Sub
-    PicList.MoveDown i
+    m_PicList.MoveDown i
     LBPicList_MoveDown i
     LBPicList.ListIndex = i + 1
 End Sub
@@ -307,7 +327,7 @@ Private Sub mnuListDeleteItem_Click()
     Dim c As Long: c = LBPicList.ListCount
     Dim i As Long: i = LBPicList.ListIndex
     If i < 0 Or (c - 1) < i Then Exit Sub
-    PicList.Remove i
+    m_PicList.Remove i
     LBPicList.RemoveItem i
 End Sub
 
@@ -326,18 +346,20 @@ End Sub
 Private Sub BtnGetWnd_Click()
     Timer1.Enabled = Not Timer1.Enabled
     If Timer1.Enabled Then Exit Sub
-    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
+    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWndRect) ' GetWinAPIRect)
 End Sub
 
 Private Sub Timer1_Timer()
     Dim p As WinAPIPoint
     Dim hr As Long: hr = GetCursorPos(p)
     If hr = 0 Then Exit Sub
-    Dim r As WinAPIRect:  r = m_Screen.RectFromPoint(p)
+    'Dim R As WinAPIRect:  R = m_Screen.RectFromPoint(p)
+    Dim r As WndRect:  Set r = MNew.WndRectFromMousePoint(p) ' m_Screen.RectFromPoint(p)
     TxtL.Text = r.Left
     TxtT.Text = r.Top
-    TxtW.Text = r.Right - r.Left
-    TxtH.Text = r.Bottom - r.Top
+    TxtW.Text = r.Width  '.Right - R.Left
+    TxtH.Text = r.Height '.Bottom - R.Top
+    'm_FocusRect.WndRect.NewC R
     m_FocusRect.Draw r
 End Sub
 
@@ -351,23 +373,38 @@ Private Sub BtnScreenshot_Click()
         MsgBox "pic is nothing"
         Exit Sub
     End If
-    PicList.Add pic
-    LBPicList.AddItem "Bild_" & LBPicList.ListCount
+    m_PicList.Add pic
+    LBPicList.AddItem "Bild_" & LBPicList.ListCount + 1
     LBPicList.ListIndex = LBPicList.ListCount - 1
 End Sub
 
 Private Sub BtnClear_Click()
     'Set PicList = mNew Collection
-    PicList.Clear
+    m_PicList.Clear
     i = 0
     LBPicList.Clear
     'PBScreenshot.AutoRedraw = False
     Set PBScreenshot.Picture = Nothing
     PBScreenshot.Cls
+    PBScreenshot.Move PBScreenshot.Left, PBScreenshot.Top, 593, 417
     'PBScreenshot.AutoRedraw = True
 End Sub
+'
+'Private Function GetWinAPIRect() As WinAPIRect
+'    'sehr suboptimal
+'    If Not IsNumeric(TxtL.Text) Then Exit Function
+'    If Not IsNumeric(TxtT.Text) Then Exit Function
+'    If Not IsNumeric(TxtW.Text) Then Exit Function
+'    If Not IsNumeric(TxtH.Text) Then Exit Function
+'
+'    Dim X As Long: X = CLng(TxtL.Text)
+'    Dim Y As Long: Y = CLng(TxtT.Text)
+'    Dim W As Long: W = CLng(TxtW.Text)
+'    Dim H As Long: H = CLng(TxtH.Text)
+'    GetWinAPIRect = MNew.WinAPIRect(X, Y, W, H)
+'End Function
 
-Private Function GetWinAPIRect() As WinAPIRect
+Private Function GetWndRect() As WndRect
     'sehr suboptimal
     If Not IsNumeric(TxtL.Text) Then Exit Function
     If Not IsNumeric(TxtT.Text) Then Exit Function
@@ -375,10 +412,10 @@ Private Function GetWinAPIRect() As WinAPIRect
     If Not IsNumeric(TxtH.Text) Then Exit Function
     
     Dim X As Long: X = CLng(TxtL.Text)
-    Dim y As Long: y = CLng(TxtT.Text)
-    Dim w As Long: w = CLng(TxtW.Text)
-    Dim h As Long: h = CLng(TxtH.Text)
-    GetWinAPIRect = MNew.WinAPIRect(X, y, w, h)
+    Dim Y As Long: Y = CLng(TxtT.Text)
+    Dim W As Long: W = CLng(TxtW.Text)
+    Dim H As Long: H = CLng(TxtH.Text)
+    Set GetWndRect = MNew.WndRect(MNew.WinAPIRect(X, Y, W, H))
 End Function
 
 Private Sub LBPicList_Click()
@@ -386,7 +423,7 @@ Private Sub LBPicList_Click()
     'PBScreenshot.AutoRedraw = False
     Dim pic As StdPicture
     Dim i As Long: i = LBPicList.ListIndex
-    Set pic = PicList.Item(i)
+    Set pic = m_PicList.Item(i)
     If pic Is Nothing Then
         MsgBox "pic is nothing"
     End If
@@ -395,23 +432,31 @@ Private Sub LBPicList_Click()
     'PBScreenshot.AutoRedraw = True
 End Sub
 
-Private Sub TxtL_Change()
-    If Timer1.Enabled Then Exit Sub
-    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
+Private Sub TxtL_Change(): TxtChange: End Sub
+Private Sub TxtT_Change(): TxtChange: End Sub
+Private Sub TxtW_Change(): TxtChange: End Sub
+Private Sub TxtH_Change(): TxtChange: End Sub
+Private Sub TxtChange()
+    If Timer1.Enabled Or bInit Then Exit Sub
+    Dim r As WndRect: Set r = GetWndRect
+    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, r) ' GetWinAPIRect)
+    m_FocusRect.Draw r
 End Sub
 
-Private Sub TxtT_Change()
-    If Timer1.Enabled Then Exit Sub
-    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
-End Sub
-
-Private Sub TxtW_Change()
-    If Timer1.Enabled Then Exit Sub
-    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
-End Sub
-
-Private Sub TxtH_Change()
-    If Timer1.Enabled Then Exit Sub
-    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
+Private Sub TxtL_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown TxtL, KeyCode, Shift: End Sub
+Private Sub TxtT_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown TxtT, KeyCode, Shift: End Sub
+Private Sub TxtW_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown TxtW, KeyCode, Shift: End Sub
+Private Sub TxtH_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown TxtH, KeyCode, Shift: End Sub
+Private Sub TxtKeyDown(tb As TextBox, KeyCode As Integer, Shift As Integer)
+    Dim s As String: s = tb.Text
+    If Not IsNumeric(s) Then Exit Sub
+    Dim v As Long: v = CLng(s)
+    Select Case KeyCode
+    Case KeyCodeConstants.vbKeyUp, KeyCodeConstants.vbKeyLeft:    v = v - 1
+    Case KeyCodeConstants.vbKeyDown, KeyCodeConstants.vbKeyRight: v = v + 1
+    'Case KeyCodeConstants.vbKeyLeft:  v = v - 1
+    'Case KeyCodeConstants.vbKeyRight: v = v + 1
+    End Select
+    tb.Text = CStr(v)
 End Sub
 

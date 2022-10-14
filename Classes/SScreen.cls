@@ -15,7 +15,7 @@ Option Explicit
 
 Private Declare Function GetDesktopWindow Lib "user32" () As LongPtr
 
-Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As LongPtr, lpRect As WinAPIRect) As Long
+'Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As LongPtr, lpRect As WinAPIRect) As Long
 
 Private Declare Function GetDC Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 
@@ -46,8 +46,8 @@ Private Const SRCCOPY As Long = &HCC0020
 'Screen aka Desktop is Source (Src)
 Private m_SrchWnd As LongPtr
 Private m_SrchDC  As LongPtr
-Private m_SrcRect As WinAPIRect
-Private m_MaxRect As WinAPIRect
+Private m_SrcRect As WndRect 'WinAPIRect
+Private m_MaxRect As WndRect 'WinAPIRect
 
 Private m_DstPB   As PictureBox
 Private m_DstHWnd As LongPtr
@@ -57,21 +57,23 @@ Private m_DstHWnd As LongPtr
 
 Private Sub Class_Initialize()
     m_SrchWnd = GetDesktopWindow
-    Dim hr As Long: hr = GetWindowRect(m_SrchWnd, m_MaxRect)
+    'Dim hr As Long: hr = GetWindowRect(m_SrchWnd, m_MaxRect)
+    Set m_MaxRect = MNew.WndRectHWnd(m_SrchWnd)
 End Sub
 
 Private Sub Class_Terminate()
     Dim hr As Long: hr = ReleaseDC(m_SrchWnd, m_SrchDC)
 End Sub
 
-Friend Sub New_(aDstPB As PictureBox, SrcRect As WinAPIRect)
+Friend Sub New_(aDstPB As PictureBox, SrcRect As WndRect) ' WinAPIRect)
     Set m_DstPB = aDstPB: m_DstHWnd = m_DstPB.hWnd
-    SetSrcRect SrcRect
+    Set m_SrcRect = SrcRect
+    'SetSrcRect SrcRect
 End Sub
 
-Friend Function SScreen(aDstPB As PictureBox, SrcRect As WinAPIRect) As SScreen
-    Set SScreen = New SScreen: SScreen.New_ aDstPB, SrcRect
-End Function
+'Friend Function SScreen(aDstPB As PictureBox, SrcRect As WinAPIRect) As SScreen
+'    Set SScreen = New SScreen: SScreen.New_ aDstPB, SrcRect
+'End Function
 
 Private Sub SetSrcRect(SrcRect As WinAPIRect)
     With m_SrcRect

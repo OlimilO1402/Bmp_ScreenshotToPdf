@@ -26,17 +26,16 @@ Option Explicit
 '    End Enum
 '#End If
 
-Private Declare Function WindowFromPoint Lib "user32" (ByVal xPoint As Long, ByVal yPoint As Long) As LongPtr
-
+'now inside WndRect:
+'Private Declare Function WindowFromPoint Lib "user32" (ByVal xPoint As Long, ByVal yPoint As Long) As LongPtr
 'Private Declare Function ChildWindowFromPoint Lib "user32" (ByVal hWndParent As LongPtr, ByVal pt As POINTAPI) As LongPtr
-Private Declare Function ChildWindowFromPoint Lib "user32" (ByVal hWndParent As LongPtr, ByVal xPoint As Long, ByVal yPoint As Long) As LongPtr
+'Private Declare Function ChildWindowFromPoint Lib "user32" (ByVal hWndParent As LongPtr, ByVal xPoint As Long, ByVal yPoint As Long) As LongPtr
+'Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As LongPtr, lpRect As WinAPIRect) As Long
 
 Private Declare Function GetDesktopWindow Lib "user32" () As LongPtr
-
 Private Declare Function GetDC Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 
-Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As LongPtr, lpRect As WinAPIRect) As Long
-        
+
 'https://docs.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-stretchblt
 'BOOL StretchBlt(
 '  [in] HDC   hdcDst,
@@ -70,9 +69,9 @@ Private Declare Function StretchBlt Lib "gdi32" ( _
 '  [in] DWORD rop
 ');
 
-Private Declare Function BitBlt Lib "gdi32" ( _
-    ByVal Dst_hDC As LongPtr, ByVal xDst As Long, ByVal yDst As Long, ByVal wDst As Long, ByVal hDst As Long, _
-    ByVal Src_hDC As LongPtr, ByVal xSrc As Long, ByVal ySrc As Long, ByVal dwRop As Long) As Long
+'Private Declare Function BitBlt Lib "gdi32" ( _
+'    ByVal Dst_hDC As LongPtr, ByVal xDst As Long, ByVal yDst As Long, ByVal wDst As Long, ByVal hDst As Long, _
+'    ByVal Src_hDC As LongPtr, ByVal xSrc As Long, ByVal ySrc As Long, ByVal dwRop As Long) As Long
 'follows: dst = src
 
 Private Declare Function ReleaseDC Lib "user32" (ByVal hWnd As LongPtr, ByVal hDC As LongPtr) As Long 'Ptr
@@ -81,36 +80,37 @@ Private Const SRCCOPY As Long = &HCC0020
 
 Private m_SrchWnd As LongPtr
 Private m_SrchDC  As LongPtr
-Private m_MaxRect As WinAPIRect
-Private m_SrcRect As WinAPIRect
+Private m_MaxRect As WndRect ' WinAPIRect
+Private m_SrcRect As WndRect ' WinAPIRect
 
 Private m_DstPB   As PictureBox
 Private m_DstHWnd As LongPtr
 Private m_DstHDC  As LongPtr
 
-Private m_DstRect As WinAPIRect
+Private m_DstRect As WndRect ' WinAPIRect
 
 Private Sub Class_Initialize()
     m_SrchWnd = GetDesktopWindow
     'm_SrcHDC = GetDC(m_SrcHWnd)
-    Dim hr As Long: hr = GetWindowRect(m_SrchWnd, m_MaxRect)
-    m_SrcRect = m_MaxRect
-    m_DstRect = m_SrcRect
+    'Dim hr As Long: hr =
+    Set m_MaxRect = MNew.WndRectHWnd(m_SrchWnd)
+    Set m_SrcRect = m_MaxRect.Clone
+    Set m_DstRect = m_SrcRect.Clone
 End Sub
 
 Private Sub Class_Terminate()
     Dim hr As Long: hr = ReleaseDC(m_SrchWnd, m_SrchDC)
 End Sub
 
-Friend Sub New_(aPB As PictureBox, SrcRect As WinAPIRect)
+Friend Sub New_(aPB As PictureBox, SrcRect As WndRect) ' WinAPIRect)
     Set m_DstPB = aPB
     m_DstHWnd = m_DstPB.hWnd
-    m_SrcRect = SrcRect
+    Set m_SrcRect = SrcRect
 End Sub
 
-Private Function Screenshot(aPB As PictureBox, SrcRect As WinAPIRect) As Screenshot
-    Set Screenshot = New Screenshot: Screenshot.New_ aPB, SrcRect
-End Function
+'Private Function Screenshot(aPB As PictureBox, SrcRect As WndRect) As Screenshot ' WinAPIRect) As Screenshot
+'    Set Screenshot = New Screenshot: Screenshot.New_ aPB, SrcRect
+'End Function
 
 Public Property Get HandleWnd() As LongPtr
     HandleWnd = m_SrchWnd
@@ -131,8 +131,8 @@ Public Function Shot() As StdPicture
     Dim SrcRectWidth  As Long:  SrcRectWidth = m_SrcRect.Right - m_SrcRect.Left
     Dim SrcRectHeight As Long: SrcRectHeight = m_SrcRect.Bottom - m_SrcRect.Top
     
-    m_DstPB.Width = SrcRectWidth * Screen.TwipsPerPixelX
-    m_DstPB.Height = SrcRectHeight * Screen.TwipsPerPixelY
+    m_DstPB.Width = SrcRectWidth '* Screen.TwipsPerPixelX
+    m_DstPB.Height = SrcRectHeight '* Screen.TwipsPerPixelY
     
     m_DstHDC = m_DstPB.hDC
     
@@ -166,83 +166,83 @@ Private Function Min(V1, V2)
     If V1 < V2 Then Min = V1 Else Min = V2
 End Function
 
-Friend Function RectFromPoint(aPt As WinAPIPoint) As WinAPIRect
-    Dim hWndParent As LongPtr: hWndParent = WindowFromPoint(aPt.x, aPt.y)
-    Dim hWndChild  As LongPtr: hWndChild = ChildWindowFromPoint(hWndParent, aPt.x, aPt.y)
-    Dim hWnd As LongPtr: If hWndChild = 0 Then hWnd = hWndParent Else hWnd = hWndChild
-    If hWnd = 0 Then Exit Function
-    Dim hr As Long: hr = GetWindowRect(hWnd, RectFromPoint)
-End Function
+'Friend Function RectFromPoint(aPt As WinAPIPoint) As WinAPIRect
+'    Dim hWndParent As LongPtr: hWndParent = WindowFromPoint(aPt.X, aPt.Y)
+'    Dim hWndChild  As LongPtr: hWndChild = ChildWindowFromPoint(hWndParent, aPt.X, aPt.Y)
+'    Dim hWnd As LongPtr: If hWndChild = 0 Then hWnd = hWndParent Else hWnd = hWndChild
+'    If hWnd = 0 Then Exit Function
+'    Dim hr As Long: hr = GetWindowRect(hWnd, RectFromPoint)
+'End Function
 
-Friend Property Get SrcRect() As WinAPIRect
-    SrcRect = m_SrcRect
+Friend Property Get SrcRect() As WndRect 'WinAPIRect
+    Set SrcRect = m_SrcRect
 End Property
-Friend Property Let SrcRect(Value As WinAPIRect)
-    m_SrcRect = Value
-End Property
-
-Public Property Get SrcLeft() As Long
-    SrcLeft = m_SrcRect.Left
-End Property
-Public Property Let SrcLeft(ByVal Value As Long)
-    m_SrcRect.Left = Value
+Friend Property Let SrcRect(Value As WndRect) 'WinAPIRect)
+    m_SrcRect.NewC Value
 End Property
 
-Public Property Get SrcTop() As Long
-    SrcTop = m_SrcRect.Top
+'Public Property Get SrcLeft() As Long
+'    SrcLeft = m_SrcRect.Left
+'End Property
+'Public Property Let SrcLeft(ByVal Value As Long)
+'    m_SrcRect.Left = Value
+'End Property
+'
+'Public Property Get SrcTop() As Long
+'    SrcTop = m_SrcRect.Top
+'End Property
+'Public Property Let SrcTop(ByVal Value As Long)
+'    m_SrcRect.Top = Value
+'End Property
+'
+'Public Property Get SrcWidth() As Long
+'    SrcWidth = m_SrcRect.Right - m_SrcRect.Left
+'End Property
+'Public Property Let SrcWidth(ByVal Value As Long)
+'    m_SrcRect.Right = m_SrcRect.Left + Value
+'End Property
+'
+'Public Property Get SrcHeight() As Long
+'    SrcHeight = m_SrcRect.Bottom - m_SrcRect.Top
+'End Property
+'Public Property Let SrcHeight(ByVal Value As Long)
+'    m_SrcRect.Bottom = m_SrcRect.Top + Value
+'End Property
+
+
+Friend Property Get DstRect() As WndRect 'WinAPIRect
+    Set DstRect = m_DstRect
 End Property
-Public Property Let SrcTop(ByVal Value As Long)
-    m_SrcRect.Top = Value
+Friend Property Let DstRect(Value As WndRect) ' WinAPIRect)
+    m_DstRect.NewC Value
 End Property
 
-Public Property Get SrcWidth() As Long
-    SrcWidth = m_SrcRect.Right - m_SrcRect.Left
-End Property
-Public Property Let SrcWidth(ByVal Value As Long)
-    m_SrcRect.Right = m_SrcRect.Left + Value
-End Property
-
-Public Property Get SrcHeight() As Long
-    SrcHeight = m_SrcRect.Bottom - m_SrcRect.Top
-End Property
-Public Property Let SrcHeight(ByVal Value As Long)
-    m_SrcRect.Bottom = m_SrcRect.Top + Value
-End Property
-
-
-Friend Property Get DstRect() As WinAPIRect
-    DstRect = m_DstRect
-End Property
-Friend Property Let DstRect(Value As WinAPIRect)
-    m_DstRect = Value
-End Property
-
-Public Property Get DstLeft() As Long
-    DstLeft = m_DstRect.Left
-End Property
-Public Property Let DstLeft(ByVal Value As Long)
-    m_DstRect.Left = Value
-End Property
-
-Public Property Get DstTop() As Long
-    DstTop = m_DstRect.Top
-End Property
-Public Property Let DstTop(ByVal Value As Long)
-    m_DstRect.Top = Value
-End Property
-
-Public Property Get DstWidth() As Long
-    DstWidth = m_DstRect.Right - m_DstRect.Left
-End Property
-Public Property Let DstWidth(ByVal Value As Long)
-    m_DstRect.Right = m_DstRect.Left + Value
-End Property
-
-Public Property Get DstHeight() As Long
-    DstHeight = m_DstRect.Bottom - m_DstRect.Top
-End Property
-Public Property Let DstHeight(ByVal Value As Long)
-    m_DstRect.Bottom = m_DstRect.Top + Value
-End Property
+'Public Property Get DstLeft() As Long
+'    DstLeft = m_DstRect.Left
+'End Property
+'Public Property Let DstLeft(ByVal Value As Long)
+'    m_DstRect.Left = Value
+'End Property
+'
+'Public Property Get DstTop() As Long
+'    DstTop = m_DstRect.Top
+'End Property
+'Public Property Let DstTop(ByVal Value As Long)
+'    m_DstRect.Top = Value
+'End Property
+'
+'Public Property Get DstWidth() As Long
+'    DstWidth = m_DstRect.Right - m_DstRect.Left
+'End Property
+'Public Property Let DstWidth(ByVal Value As Long)
+'    m_DstRect.Right = m_DstRect.Left + Value
+'End Property
+'
+'Public Property Get DstHeight() As Long
+'    DstHeight = m_DstRect.Bottom - m_DstRect.Top
+'End Property
+'Public Property Let DstHeight(ByVal Value As Long)
+'    m_DstRect.Bottom = m_DstRect.Top + Value
+'End Property
 
 

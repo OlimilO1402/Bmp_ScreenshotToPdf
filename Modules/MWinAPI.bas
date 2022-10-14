@@ -14,16 +14,14 @@ Public Type WinAPIRect
     Bottom As Long
 End Type
 
-'Private Type RECT
-'    Left As Long
-'    Top As Long
-'    Right As Long
-'    Bottom As Long
-'End Type
-
 Public Type WinAPIPoint
     X As Long
-    y As Long
+    Y As Long
+End Type
+
+Public Type WinAPISize
+    Width  As Long
+    Height As Long
 End Type
 
 'Public Declare Function DrawFocusRect Lib "user32" (ByVal hhdc As LongPtr, lpRect As WinAPIRect) As Long
