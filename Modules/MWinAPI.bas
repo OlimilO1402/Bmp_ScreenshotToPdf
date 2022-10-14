@@ -1,11 +1,11 @@
 Attribute VB_Name = "MwinAPI"
 Option Explicit
 
-#If VBA7 = 0 Then
-    Public Enum LongPtr
-        [_]
-    End Enum
-#End If
+'#If VBA7 = 0 Then
+'    Public Enum LongPtr
+'        [_]
+'    End Enum
+'#End If
 
 Public Type WinAPIRect
     Left   As Long
@@ -22,9 +22,12 @@ End Type
 'End Type
 
 Public Type WinAPIPoint
-    x As Long
+    X As Long
     y As Long
 End Type
+
+'Public Declare Function DrawFocusRect Lib "user32" (ByVal hhdc As LongPtr, lpRect As WinAPIRect) As Long
+Public Declare Function GetDC Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 
 'Public Function HimetricToPixel(Himetric As Single) As Long
 Public Function HimToPix(ByVal Himetric As Single) As Long

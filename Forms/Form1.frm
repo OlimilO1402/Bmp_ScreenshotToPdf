@@ -1,77 +1,69 @@
 VERSION 5.00
-Begin VB.Form Form1 
+Begin VB.Form FMain 
    Caption         =   "Form1"
    ClientHeight    =   7455
    ClientLeft      =   225
    ClientTop       =   570
-   ClientWidth     =   10935
+   ClientWidth     =   11055
    Icon            =   "Form1.frx":0000
    LinkTopic       =   "Form1"
    ScaleHeight     =   7455
-   ScaleWidth      =   10935
+   ScaleWidth      =   11055
    StartUpPosition =   3  'Windows-Standard
-   Begin VB.CommandButton BtnSavePictures 
-      Caption         =   "SavePictures"
-      Height          =   375
-      Left            =   7440
-      TabIndex        =   16
-      Top             =   0
-      Width           =   1335
-   End
    Begin VB.CommandButton BtnInfo 
       Caption         =   "Info"
       Height          =   375
-      Left            =   6000
-      TabIndex        =   15
-      Top             =   360
+      Left            =   9720
+      TabIndex        =   14
+      Top             =   120
       Width           =   1335
    End
    Begin VB.CommandButton BtnClear 
       Caption         =   "Clear"
       Height          =   375
-      Left            =   6000
+      Left            =   8400
       TabIndex        =   12
-      Top             =   0
+      Top             =   120
+      Width           =   1335
+   End
+   Begin VB.CommandButton BtnSavePictures 
+      Caption         =   "SavePictures"
+      Height          =   375
+      Left            =   7080
+      TabIndex        =   15
+      Top             =   120
       Width           =   1335
    End
    Begin VB.CommandButton BtnPrintToPDF 
       Caption         =   "Create PDF"
       Height          =   375
-      Left            =   4560
+      Left            =   5760
       TabIndex        =   11
-      Top             =   360
+      Top             =   120
       Width           =   1335
    End
-   Begin VB.CommandButton BtnSet 
-      Caption         =   "Set"
+   Begin VB.CommandButton BtnScreenshot 
+      Caption         =   "Screenshot"
       Height          =   375
-      Left            =   3120
-      TabIndex        =   13
-      Top             =   360
+      Left            =   4440
+      TabIndex        =   0
+      Top             =   120
       Width           =   1335
    End
    Begin VB.CommandButton BtnGetWnd 
       Caption         =   "Set Wnd Rect"
       Height          =   375
       Left            =   3120
-      TabIndex        =   14
+      TabIndex        =   13
       ToolTipText     =   "Move mouse over window & hit Enter"
-      Top             =   0
-      Width           =   1335
-   End
-   Begin VB.CommandButton BtnScreenshot 
-      Caption         =   "Screenshot"
-      Height          =   375
-      Left            =   4560
-      TabIndex        =   0
-      Top             =   0
+      Top             =   120
       Width           =   1335
    End
    Begin VB.Timer Timer1 
       Enabled         =   0   'False
-      Interval        =   500
-      Left            =   4200
-      Top             =   0
+      Interval        =   100
+      Left            =   3120
+      Top             =   240
    End
    Begin VB.TextBox TxtL 
       Alignment       =   1  'Rechts
@@ -169,10 +161,11 @@ Begin VB.Form Form1
       End
       Begin VB.Menu mnuListDeleteItem 
          Caption         =   "Delete"
+         Shortcut        =   {DEL}
       End
    End
 End
-Attribute VB_Name = "Form1"
+Attribute VB_Name = "FMain"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -183,7 +176,7 @@ Private FNm As String
 Private i As Long
 'Private PicList As Collection
 Private PicList As List
-
+Private m_FocusRect As FocusRect
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As WinAPIPoint) As Long
 
 Private Sub Form_Load()
@@ -195,6 +188,7 @@ Private Sub Form_Load()
     TxtW.Text = 672 'CLng(905 * CDbl(210) / CDbl(297))
     TxtH.Text = 913
     Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
+    Set m_FocusRect = MNew.FocusRect(MwinAPI.GetDC(0))
     BtnClear_Click
 End Sub
 
@@ -237,7 +231,7 @@ Try: On Error GoTo Catch
         Dim h As Long
         Dim pic As StdPicture
         Dim c As Long: c = PicList.Count
-        For i = 1 To PicList.Count
+        For i = 0 To PicList.Count - 1
             Set pic = PicList.Item(i)
             w = PBScreenshot.ScaleX(pic.Width, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
             h = PBScreenshot.ScaleY(pic.Height, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
@@ -275,6 +269,12 @@ Private Sub Form_Resize()
     Dim w As Single: w = LBPicList.Width
     Dim h As Single: h = Me.ScaleHeight - T
     If w > 0 And h > 0 Then LBPicList.Move L, T, w, h
+End Sub
+
+Private Sub LBPicList_KeyDown(KeyCode As Integer, Shift As Integer)
+    If KeyCode = KeyCodeConstants.vbKeyDelete Then
+        mnuListDeleteItem_Click
+    End If
 End Sub
 
 Private Sub LBPicList_MouseDown(Button As Integer, Shift As Integer, X As Single, y As Single)
@@ -325,6 +325,8 @@ End Sub
 
 Private Sub BtnGetWnd_Click()
     Timer1.Enabled = Not Timer1.Enabled
+    If Timer1.Enabled Then Exit Sub
+    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
 End Sub
 
 Private Sub Timer1_Timer()
@@ -336,11 +338,12 @@ Private Sub Timer1_Timer()
     TxtT.Text = r.Top
     TxtW.Text = r.Right - r.Left
     TxtH.Text = r.Bottom - r.Top
+    m_FocusRect.Draw r
 End Sub
 
-Private Sub BtnSet_Click()
-    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
-End Sub
+'Private Sub BtnSet_Click()
+'    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
+'End Sub
 
 Private Sub BtnScreenshot_Click()
     Dim pic As StdPicture: Set pic = m_Screen.Shot
@@ -365,6 +368,12 @@ Private Sub BtnClear_Click()
 End Sub
 
 Private Function GetWinAPIRect() As WinAPIRect
+    'sehr suboptimal
+    If Not IsNumeric(TxtL.Text) Then Exit Function
+    If Not IsNumeric(TxtT.Text) Then Exit Function
+    If Not IsNumeric(TxtW.Text) Then Exit Function
+    If Not IsNumeric(TxtH.Text) Then Exit Function
+    
     Dim X As Long: X = CLng(TxtL.Text)
     Dim y As Long: y = CLng(TxtT.Text)
     Dim w As Long: w = CLng(TxtW.Text)
@@ -385,3 +394,24 @@ Private Sub LBPicList_Click()
     PBScreenshot.Refresh
     'PBScreenshot.AutoRedraw = True
 End Sub
+
+Private Sub TxtL_Change()
+    If Timer1.Enabled Then Exit Sub
+    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
+End Sub
+
+Private Sub TxtT_Change()
+    If Timer1.Enabled Then Exit Sub
+    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
+End Sub
+
+Private Sub TxtW_Change()
+    If Timer1.Enabled Then Exit Sub
+    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
+End Sub
+
+Private Sub TxtH_Change()
+    If Timer1.Enabled Then Exit Sub
+    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWinAPIRect)
+End Sub
+
