@@ -1,12 +1,12 @@
 Attribute VB_Name = "MNew"
 Option Explicit
 
-Public Function SScreen(aDstPB As PictureBox, SrcRect As WndRect) As SScreen ' WinAPIRect) As SScreen
-    Set SScreen = New SScreen: SScreen.New_ aDstPB, SrcRect
+Public Function SScreen(DstPB As PictureBox, SrcRect As WndRect) As SScreen
+    Set SScreen = New SScreen: SScreen.New_ DstPB, SrcRect
 End Function
 
-Public Function Screenshot(aPB As PictureBox, SrcRect As WndRect) As Screenshot ' WinAPIRect) As Screenshot
-    Set Screenshot = New Screenshot: Screenshot.New_ aPB, SrcRect
+Public Function Screenshot(PicBmp As StdPicBmp, SrcRect As WndRect) As Screenshot
+    Set Screenshot = New Screenshot: Screenshot.New_ PicBmp, SrcRect
 End Function
 
 Public Function WinAPIRect(ByVal X As Long, ByVal Y As Long, ByVal W As Long, ByVal H As Long) As WinAPIRect
@@ -35,8 +35,8 @@ Public Function WinAPISize(ByVal W As Long, ByVal H As Long) As WinAPISize
     With WinAPISize: .Width = W: .Height = H: End With
 End Function
 
-Public Function StdPicBmp(aStdPic As StdPicture) As StdPicBmp
-    Set StdPicBmp = New StdPicBmp: StdPicBmp.New_ aStdPic
+Public Function StdPicBmp(StdPic As StdPicture) As StdPicBmp
+    Set StdPicBmp = New StdPicBmp: StdPicBmp.New_ StdPic
 End Function
 
 Public Function FocusRect(ByVal ahDC As LongPtr) As FocusRect

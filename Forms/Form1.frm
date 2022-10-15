@@ -111,10 +111,11 @@ Begin VB.Form FMain
       AutoRedraw      =   -1  'True
       AutoSize        =   -1  'True
       BackColor       =   &H80000005&
+      BorderStyle     =   0  'Kein
       Height          =   6255
       Left            =   2160
-      ScaleHeight     =   6195
-      ScaleWidth      =   8835
+      ScaleHeight     =   6255
+      ScaleWidth      =   8895
       TabIndex        =   1
       Top             =   840
       Width           =   8895
@@ -172,10 +173,10 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
-Private m_Screen As Screenshot
+Private m_Screen As SScreen 'shot
 Private FNm As String
 Private i As Long
-Private m_PicList   As List ' As Collection
+Private m_ScsList   As List ' As Collection 'Of Screenshot
 Private m_FocusRect As FocusRect
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As WinAPIPoint) As Long
 
@@ -195,14 +196,14 @@ Private bInit As Boolean
 Private Sub Form_Load()
     bInit = True
     Me.Caption = App.EXEName & " v" & App.Major & "." & App.Minor & "." & App.Revision
-    Set m_PicList = MNew.List(vbObject)
+    Set m_ScsList = MNew.List(vbObject) 'Of Screenshot)
     FNm = "C:\TestDir\"
     TxtL.Text = 1
     TxtT.Text = 84
     TxtW.Text = 672 'CLng(905 * CDbl(210) / CDbl(297))
     TxtH.Text = 913
-    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWndRect) ' GetWinAPIRect)
-    Set m_FocusRect = MNew.FocusRect(MwinAPI.GetDC(0))
+    Set m_Screen = MNew.SScreen(Me.PBScreenshot, GetWndRect) ' GetWinAPIRect)
+    Set m_FocusRect = MNew.FocusRect(m_Screen.DesktophDC)
     BtnClear_Click
     bInit = False
 End Sub
@@ -257,10 +258,12 @@ Try: On Error GoTo Catch
         '.ScaleMode = ScaleModeConstants.vbPixels
         Dim W As Long
         Dim H As Long
+        Dim scs As Screenshot
         Dim pic As StdPicture
-        Dim u As Long: u = m_PicList.Count - 1
+        Dim u As Long: u = m_ScsList.Count - 1
         For i = 0 To u
-            Set pic = m_PicList.Item(i)
+            Set scs = m_ScsList.Item(i)
+            Set pic = scs.Picture.StdPicture
             W = PBScreenshot.ScaleX(pic.Width, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
             H = PBScreenshot.ScaleY(pic.Height, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
             
@@ -310,7 +313,7 @@ Private Sub mnuListMoveUp_Click()
     If c = 1 Then Exit Sub
     Dim i As Long: i = LBPicList.ListIndex
     If i <= 0 Or (c - 1) < i Then Exit Sub
-    m_PicList.MoveUp i
+    m_ScsList.MoveUp i
     LBPicList_MoveUp i
     LBPicList.ListIndex = i - 1
 End Sub
@@ -319,7 +322,7 @@ Private Sub mnuListMoveDown_Click()
     If c = 1 Then Exit Sub
     Dim i As Long: i = LBPicList.ListIndex
     If i < 0 Or (c - 1) <= i Then Exit Sub
-    m_PicList.MoveDown i
+    m_ScsList.MoveDown i
     LBPicList_MoveDown i
     LBPicList.ListIndex = i + 1
 End Sub
@@ -327,7 +330,7 @@ Private Sub mnuListDeleteItem_Click()
     Dim c As Long: c = LBPicList.ListCount
     Dim i As Long: i = LBPicList.ListIndex
     If i < 0 Or (c - 1) < i Then Exit Sub
-    m_PicList.Remove i
+    m_ScsList.Remove i
     LBPicList.RemoveItem i
 End Sub
 
@@ -346,7 +349,7 @@ End Sub
 Private Sub BtnGetWnd_Click()
     Timer1.Enabled = Not Timer1.Enabled
     If Timer1.Enabled Then Exit Sub
-    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, GetWndRect) ' GetWinAPIRect)
+    Set m_Screen = MNew.SScreen(Me.PBScreenshot, GetWndRect) ' GetWinAPIRect)
 End Sub
 
 Private Sub Timer1_Timer()
@@ -368,19 +371,21 @@ End Sub
 'End Sub
 
 Private Sub BtnScreenshot_Click()
-    Dim pic As StdPicture: Set pic = m_Screen.Shot
-    If pic Is Nothing Then
-        MsgBox "pic is nothing"
+    m_FocusRect.Delete
+    Dim scs As Screenshot: Set scs = m_Screen.Shot
+    If scs Is Nothing Then
+        MsgBox "screenshot is nothing"
         Exit Sub
     End If
-    m_PicList.Add pic
-    LBPicList.AddItem "Bild_" & LBPicList.ListCount + 1
+    scs.Name = "Bild_" & LBPicList.ListCount + 1
+    m_ScsList.Add scs
+    LBPicList.AddItem scs.Name
     LBPicList.ListIndex = LBPicList.ListCount - 1
 End Sub
 
 Private Sub BtnClear_Click()
     'Set PicList = mNew Collection
-    m_PicList.Clear
+    m_ScsList.Clear
     i = 0
     LBPicList.Clear
     'PBScreenshot.AutoRedraw = False
@@ -421,13 +426,13 @@ End Function
 Private Sub LBPicList_Click()
     'PBScreenshot.Cls
     'PBScreenshot.AutoRedraw = False
-    Dim pic As StdPicture
+    Dim scs As Screenshot
     Dim i As Long: i = LBPicList.ListIndex
-    Set pic = m_PicList.Item(i)
-    If pic Is Nothing Then
+    Set scs = m_ScsList.Item(i)
+    If scs Is Nothing Then
         MsgBox "pic is nothing"
     End If
-    Set PBScreenshot.Picture = pic
+    Set PBScreenshot.Picture = scs.Picture.StdPicture
     PBScreenshot.Refresh
     'PBScreenshot.AutoRedraw = True
 End Sub
@@ -439,24 +444,54 @@ Private Sub TxtH_Change(): TxtChange: End Sub
 Private Sub TxtChange()
     If Timer1.Enabled Or bInit Then Exit Sub
     Dim r As WndRect: Set r = GetWndRect
-    Set m_Screen = MNew.Screenshot(Me.PBScreenshot, r) ' GetWinAPIRect)
+    'Set m_Screen = MNew.SScreen(Me.PBScreenshot, r)
+    m_Screen.SrcRect.NewC r
     m_FocusRect.Draw r
 End Sub
 
-Private Sub TxtL_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown TxtL, KeyCode, Shift: End Sub
-Private Sub TxtT_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown TxtT, KeyCode, Shift: End Sub
-Private Sub TxtW_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown TxtW, KeyCode, Shift: End Sub
-Private Sub TxtH_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown TxtH, KeyCode, Shift: End Sub
-Private Sub TxtKeyDown(tb As TextBox, KeyCode As Integer, Shift As Integer)
-    Dim s As String: s = tb.Text
-    If Not IsNumeric(s) Then Exit Sub
-    Dim v As Long: v = CLng(s)
-    Select Case KeyCode
-    Case KeyCodeConstants.vbKeyUp, KeyCodeConstants.vbKeyLeft:    v = v - 1
-    Case KeyCodeConstants.vbKeyDown, KeyCodeConstants.vbKeyRight: v = v + 1
+Private Sub TxtL_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown 1, TxtL, KeyCode, Shift: End Sub
+Private Sub TxtT_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown 2, TxtT, KeyCode, Shift: End Sub
+Private Sub TxtW_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown 3, TxtW, KeyCode, Shift: End Sub
+Private Sub TxtH_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown 4, TxtH, KeyCode, Shift: End Sub
+Private Sub TxtKeyDown(ByVal prop As Long, tb As TextBox, KeyCode As Integer, Shift As Integer)
+    
+    Dim d As Long: d = IIf(Shift, 5, 1) * IIf(KeyCode = KeyCodeConstants.vbKeyUp Or KeyCode = KeyCodeConstants.vbKeyLeft, -1, 1)
+    'Select Case KeyCode
+    'Case KeyCodeConstants.vbKeyUp, KeyCodeConstants.vbKeyLeft:    d = -d
+    'Case KeyCodeConstants.vbKeyDown, KeyCodeConstants.vbKeyRight: v = v + d
     'Case KeyCodeConstants.vbKeyLeft:  v = v - 1
     'Case KeyCodeConstants.vbKeyRight: v = v + 1
+    'End Select
+    
+    Dim r As WndRect: Set r = m_FocusRect.WndRect.Clone
+    Dim v As Long
+    
+    Select Case prop
+    Case 1: v = r.Left:   v = v + d: r.Left = v
+    Case 2: v = r.Top:    v = v + d: r.Top = v
+    Case 3: v = r.Right:  v = v + d: r.Right = v
+    Case 4: v = r.Bottom: v = v + d: r.Bottom = v
     End Select
+    'Shift          = 1;
+    'Strg           = 2;
+    'Shift+Strg     = 1 + 2=3;
+    'Alt            = 4;
+    'Shift+Alt      = 1 + 4 = 5;
+    'Shift+Strg+Alt = 1 + 2 + 4 = 7
+    '
+    
+    'write the value in qestion
+'    Select Case prop
+'    Case 1: r.Left = v
+'    Case 2: r.Top = v
+'    Case 3: r.Right = v
+'    Case 4: r.Bottom = v
+'    End Select
+    
+    bInit = True
     tb.Text = CStr(v)
+    bInit = False
+    m_Screen.SrcRect.NewC r
+    m_FocusRect.Draw r
 End Sub
 

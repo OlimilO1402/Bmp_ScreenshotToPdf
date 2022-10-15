@@ -12,31 +12,14 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-'Private Type WinAPIRect
-'    Left   As Long
-'    Top    As Long
-'    Right  As Long
-'    Bottom As Long
-'End Type
-'Private Type RECT
-'    Left As Long
-'    Top As Long
-'    Right As Long
-'    Bottom As Long
-'End Type
-'Public Type WinAPIPoint
-'    X As Long
-'    y As Long
-'End Type
-
-'Private m_Rect As WinAPIRect
-
-
 'the deviceContext where to draw
 Private m_hDC     As LongPtr
 Private m_Rect    As WndRect
 Private m_Visible As Boolean
+'https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-drawfocusrect
 Private Declare Function DrawFocusRect Lib "user32" (ByVal hhdc As LongPtr, lpRect As Any) As Long 'WinAPIRect) As Long
+'https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-releasedc
+Private Declare Function ReleaseDC Lib "user32" (ByVal hWnd As LongPtr, ByVal hDC As LongPtr) As Long 'Ptr
 
 Private Sub Class_Initialize()
     Set m_Rect = New WndRect
@@ -45,9 +28,12 @@ End Sub
 Friend Sub New_(ByVal ahDC As LongPtr)
     m_hDC = ahDC
 End Sub
+'Public Function FocusRect(ByVal ahDC As LongPtr) As FocusRect
+'    Set FocusRect = New FocusRect: FocusRect.New_ ahDC
+'End Function
 
 Private Sub Class_Terminate()
-    Me.Delete
+    'Me.Delete 'nope leads to ghost-FocusRects
 End Sub
 
 Public Property Get Visible() As Boolean
@@ -55,36 +41,23 @@ Public Property Get Visible() As Boolean
 End Property
 Public Sub Delete()
     If Not m_Visible Then Exit Sub
-    DrawFocusRect m_hDC, m_Rect
+    DrawFocusRect m_hDC, ByVal m_Rect.Ptr
+    m_Visible = False
 End Sub
 
 Public Property Get WndRect() As WndRect
     Set WndRect = m_Rect
 End Property
 
-'Public Function FocusRect(ByVal ahDC As LongPtr) As FocusRect
-'    Set FocusRect = New FocusRect: FocusRect.New_ ahDC
-'End Function
-'
-'Friend Function Equals(other As WinAPIRect) As Boolean
-'    With m_Rect
-'        If .Left <> other.Left Then Exit Function
-'        If .Top <> other.Top Then Exit Function
-'        If .Right <> other.Right Then Exit Function
-'        If .Bottom <> other.Bottom Then Exit Function
-'    End With
-'    Equals = True
-'End Function
-
-Friend Sub Draw(NewRect As WndRect) 'WinAPIRect)
-
-'Besser das FocusRect 3-Pixel breit machen
+Friend Sub Draw(NewRect As WndRect)
+    'Maybe better we make it 3-Pixel thick? no
     If m_Rect.Equals(NewRect) Then Exit Sub
-    'If Me.Equals(NewRect) Then Exit Sub
-    'Zuerst das alte Rect löschen
-    DrawFocusRect m_hDC, ByVal m_Rect.Ptr
-    'Dann  das neue Rect zeichnen
+    If m_Visible Then
+        'First delete the old Rect
+        DrawFocusRect m_hDC, ByVal m_Rect.Ptr
+    End If
+    'Then we draw the new Rect
     m_Rect.NewC NewRect
     DrawFocusRect m_hDC, ByVal m_Rect.Ptr
-    m_Visible = Not m_Visible
+    m_Visible = True ' Not m_Visible
 End Sub

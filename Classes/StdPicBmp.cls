@@ -23,13 +23,13 @@ Private Type WinAPIBitmap
     bmBits       As Long
 End Type
 
-Private Declare Function GetObjectW Lib "gdi32" (ByVal hObject As LongPtr, ByVal nCount As Long, ByRef lpObject As Any) As Long
-
 Private m_StdPic As StdPicture
 Private m_bmp    As WinAPIBitmap
+'https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-getobjectw
+Private Declare Function GetObjectW Lib "gdi32" (ByVal hObject As LongPtr, ByVal nCount As Long, ByRef lpObject As Any) As Long
 
-Friend Sub New_(aStdPic As StdPicture)
-    Set m_StdPic = aStdPic
+Friend Sub New_(StdPic As StdPicture)
+    Set m_StdPic = StdPic
     Dim hr As Long: hr = GetObjectW(m_StdPic.Handle, LenB(m_bmp), m_bmp)
 End Sub
 
@@ -45,6 +45,6 @@ Public Property Get Handle() As LongPtr
     Handle = m_StdPic.Handle
 End Property
 
-'Public Property Get hDC() As LongPtr
-'    '
-'End Property
+Public Property Get StdPicture() As StdPicture
+    Set StdPicture = m_StdPic
+End Property
