@@ -357,13 +357,13 @@ Private Sub Timer1_Timer()
     Dim hr As Long: hr = GetCursorPos(p)
     If hr = 0 Then Exit Sub
     'Dim R As WinAPIRect:  R = m_Screen.RectFromPoint(p)
-    Dim r As WndRect:  Set r = MNew.WndRectFromMousePoint(p) ' m_Screen.RectFromPoint(p)
-    TxtL.Text = r.Left
-    TxtT.Text = r.Top
-    TxtW.Text = r.Width  '.Right - R.Left
-    TxtH.Text = r.Height '.Bottom - R.Top
+    Dim R As WndRect:  Set R = MNew.WndRectFromMousePoint(p) ' m_Screen.RectFromPoint(p)
+    TxtL.Text = R.Left
+    TxtT.Text = R.Top
+    TxtW.Text = R.Width  '.Right - R.Left
+    TxtH.Text = R.Height '.Bottom - R.Top
     'm_FocusRect.WndRect.NewC R
-    m_FocusRect.Draw r
+    m_FocusRect.Draw R
 End Sub
 
 'Private Sub BtnSet_Click()
@@ -443,10 +443,12 @@ Private Sub TxtW_Change(): TxtChange: End Sub
 Private Sub TxtH_Change(): TxtChange: End Sub
 Private Sub TxtChange()
     If Timer1.Enabled Or bInit Then Exit Sub
-    Dim r As WndRect: Set r = GetWndRect
+    'Timer1.Enabled = False
+    Dim R As WndRect: Set R = GetWndRect
+    If R Is Nothing Then Exit Sub
     'Set m_Screen = MNew.SScreen(Me.PBScreenshot, r)
-    m_Screen.SrcRect.NewC r
-    m_FocusRect.Draw r
+    m_Screen.SrcRect.NewC R
+    m_FocusRect.Draw R
 End Sub
 
 Private Sub TxtL_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown 1, TxtL, KeyCode, Shift: End Sub
@@ -454,44 +456,59 @@ Private Sub TxtT_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown 2, Tx
 Private Sub TxtW_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown 3, TxtW, KeyCode, Shift: End Sub
 Private Sub TxtH_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown 4, TxtH, KeyCode, Shift: End Sub
 Private Sub TxtKeyDown(ByVal prop As Long, tb As TextBox, KeyCode As Integer, Shift As Integer)
+
+    Select Case KeyCode
+    Case KeyCodeConstants.vbKeyUp, KeyCodeConstants.vbKeyDown, KeyCodeConstants.vbKeyLeft, KeyCodeConstants.vbKeyRight
+        Dim d As Long: d = IIf(Shift, 5, 1) * IIf(KeyCode = KeyCodeConstants.vbKeyUp Or KeyCode = KeyCodeConstants.vbKeyLeft, -1, 1)
+        'Select Case KeyCode
+        'Case KeyCodeConstants.vbKeyUp, KeyCodeConstants.vbKeyLeft:    d = -d
+        'Case KeyCodeConstants.vbKeyDown, KeyCodeConstants.vbKeyRight: v = v + d
+        'Case KeyCodeConstants.vbKeyLeft:  v = v - 1
+        'Case KeyCodeConstants.vbKeyRight: v = v + 1
+        'End Select
     
-    Dim d As Long: d = IIf(Shift, 5, 1) * IIf(KeyCode = KeyCodeConstants.vbKeyUp Or KeyCode = KeyCodeConstants.vbKeyLeft, -1, 1)
-    'Select Case KeyCode
-    'Case KeyCodeConstants.vbKeyUp, KeyCodeConstants.vbKeyLeft:    d = -d
-    'Case KeyCodeConstants.vbKeyDown, KeyCodeConstants.vbKeyRight: v = v + d
-    'Case KeyCodeConstants.vbKeyLeft:  v = v - 1
-    'Case KeyCodeConstants.vbKeyRight: v = v + 1
-    'End Select
+        Dim R As WndRect: Set R = m_FocusRect.WndRect.Clone
+        Dim v As Long
     
-    Dim r As WndRect: Set r = m_FocusRect.WndRect.Clone
-    Dim v As Long
+        Select Case prop
+        Case 1: v = R.Left:   v = v + d: R.Left = v
+        Case 2: v = R.Top:    v = v + d: R.Top = v
+        'Case 3: v = R.Right:  v = v + d: R.Right = v
+        Case 3: v = R.Width:  v = v + d: R.Width = v
+        'Case 4: v = R.Bottom: v = v + d: R.Bottom = v
+        Case 4: v = R.Height: v = v + d: R.Height = v
+        End Select
+        'Shift          = 1;
+        'Strg           = 2;
+        'Shift+Strg     = 1 + 2=3;
+        'Alt            = 4;
+        'Shift+Alt      = 1 + 4 = 5;
+        'Shift+Strg+Alt = 1 + 2 + 4 = 7
+        '
     
-    Select Case prop
-    Case 1: v = r.Left:   v = v + d: r.Left = v
-    Case 2: v = r.Top:    v = v + d: r.Top = v
-    Case 3: v = r.Right:  v = v + d: r.Right = v
-    Case 4: v = r.Bottom: v = v + d: r.Bottom = v
+        'write the value in qestion
+    '    Select Case prop
+    '    Case 1: r.Left = v
+    '    Case 2: r.Top = v
+    '    Case 3: r.Right = v
+    '    Case 4: r.Bottom = v
+    '    End Select
+    
+        'bInit = True
+        'tb.Text = CStr(v)
+        'bInit = False
+        m_Screen.SrcRect.NewC R
+        
+        UpdateView
     End Select
-    'Shift          = 1;
-    'Strg           = 2;
-    'Shift+Strg     = 1 + 2=3;
-    'Alt            = 4;
-    'Shift+Alt      = 1 + 4 = 5;
-    'Shift+Strg+Alt = 1 + 2 + 4 = 7
-    '
-    
-    'write the value in qestion
-'    Select Case prop
-'    Case 1: r.Left = v
-'    Case 2: r.Top = v
-'    Case 3: r.Right = v
-'    Case 4: r.Bottom = v
-'    End Select
-    
-    bInit = True
-    tb.Text = CStr(v)
-    bInit = False
-    m_Screen.SrcRect.NewC r
-    m_FocusRect.Draw r
 End Sub
 
+Sub UpdateView()
+    bInit = True
+    TxtL.Text = m_Screen.SrcRect.Left
+    TxtT.Text = m_Screen.SrcRect.Top
+    TxtW.Text = m_Screen.SrcRect.Width
+    TxtH.Text = m_Screen.SrcRect.Height
+    m_FocusRect.Draw m_Screen.SrcRect
+    bInit = False
+End Sub
