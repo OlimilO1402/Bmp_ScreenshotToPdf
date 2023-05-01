@@ -1,16 +1,25 @@
 VERSION 5.00
 Begin VB.Form FMain 
-   Caption         =   "Form1"
+   Caption         =   "FMain"
    ClientHeight    =   7455
    ClientLeft      =   225
    ClientTop       =   570
-   ClientWidth     =   11175
-   Icon            =   "Form1.frx":0000
-   LinkTopic       =   "Form1"
+   ClientWidth     =   13335
+   Icon            =   "FMain.frx":0000
+   LinkTopic       =   "FMain"
    ScaleHeight     =   497
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   745
+   ScaleWidth      =   889
    StartUpPosition =   3  'Windows-Standard
+   Begin VB.CommandButton BtnDragWndRect 
+      Caption         =   "Drag Wnd Rect"
+      Height          =   375
+      Left            =   3120
+      TabIndex        =   16
+      ToolTipText     =   "Move mouse over window & hit Enter"
+      Top             =   360
+      Width           =   1335
+   End
    Begin VB.CommandButton BtnInfo 
       Caption         =   "Info"
       Height          =   375
@@ -57,14 +66,14 @@ Begin VB.Form FMain
       Left            =   3120
       TabIndex        =   13
       ToolTipText     =   "Move mouse over window & hit Enter"
-      Top             =   120
+      Top             =   0
       Width           =   1335
    End
    Begin VB.Timer Timer1 
       Enabled         =   0   'False
       Interval        =   100
-      Left            =   3120
-      Top             =   240
+      Left            =   2520
+      Top             =   360
    End
    Begin VB.TextBox TxtL 
       Alignment       =   1  'Rechts
@@ -76,9 +85,9 @@ Begin VB.Form FMain
    End
    Begin VB.ListBox LBPicList 
       Height          =   6300
-      ItemData        =   "Form1.frx":1782
+      ItemData        =   "FMain.frx":1782
       Left            =   0
-      List            =   "Form1.frx":1784
+      List            =   "FMain.frx":1784
       TabIndex        =   10
       Top             =   840
       Width           =   2175
@@ -237,11 +246,16 @@ Private Sub BtnPrintToPDF_Click()
         MsgBox "Printer not found: '" & pn & "'"
         Exit Sub
     End If
+    
+    Dim s As String: s = "Portrait- or landscape-format? (Portrait = Yes, Landscape = No)"
+    Dim mbr As VbMsgBoxResult: mbr = MsgBox(s, vbYesNoCancel)
+    If mbr = vbCancel Then Exit Sub
+    Dim isFmtPortrait As Boolean: isFmtPortrait = mbr = vbYes
     Dim dpi    As Single:    dpi = 96   'dots per inch
     Dim ppi    As Single:    ppi = 72   'point per inch
     Dim mmpi   As Single:   mmpi = 25.4 'mm per inch
-    Dim DA4_w  As Single:  DA4_w = 210  'mm
-    Dim DA4_h  As Single:  DA4_h = 297  'mm
+    Dim DA4_w  As Single:  DA4_w = IIf(isFmtPortrait, 210, 297)  'mm
+    Dim DA4_h  As Single:  DA4_h = IIf(isFmtPortrait, 297, 210)  'mm
     Dim marg_L As Single: marg_L = 0 '5
     Dim marg_R As Single: marg_R = 0 '5
     Dim wA4    As Single:    wA4 = DA4_w - marg_L - marg_R
@@ -256,6 +270,8 @@ Try: On Error GoTo Catch
         '.CurrentX = 5
         '.CurrentY = 5
         '.ScaleMode = ScaleModeConstants.vbPixels
+        
+        Printer.Orientation = IIf(isFmtPortrait, PrinterObjectConstants.vbPRORPortrait, PrinterObjectConstants.vbPRORLandscape)
         Dim W As Long
         Dim H As Long
         Dim scs As Screenshot
@@ -268,11 +284,11 @@ Try: On Error GoTo Catch
             H = PBScreenshot.ScaleY(pic.Height, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
             
             sc_w = wA4 / ((W / dpi) * mmpi)
-            'sc_h = wA4 / ((h / dpi) * mmpi)
+            sc_h = sc_w 'wA4 / ((h / dpi) * mmpi)
             'Debug.Print sc
             'sc = 1.184628041
             'Debug.Print pic.Width
-            Printer.PaintPicture pic, 0, 0, pic.Width * sc_w, pic.Height * sc_w, 0, 0, pic.Width, pic.Height
+            Printer.PaintPicture pic, 0, 0, pic.Width * sc_w, pic.Height * sc_h, 0, 0, pic.Width, pic.Height
             If i < u Then
                 Printer.NewPage
             End If
@@ -350,6 +366,16 @@ Private Sub BtnGetWnd_Click()
     Timer1.Enabled = Not Timer1.Enabled
     If Timer1.Enabled Then Exit Sub
     Set m_Screen = MNew.SScreen(Me.PBScreenshot, GetWndRect) ' GetWinAPIRect)
+End Sub
+
+Private Sub BtnDragWndRect_Click()
+    Dim FSB As New FScreenshotBorders
+    'Dim R As WndRect: Set R = m_FocusRect.WndRect.Clone
+    Dim R As WndRect: Set R = m_Screen.SrcRect.Clone
+    If FSB.ShowDialog(Me, R) = vbCancel Then Exit Sub
+    'm_FocusRect.WndRect.NewC R
+    m_Screen.SrcRect.NewC R
+    UpdateView
 End Sub
 
 Private Sub Timer1_Timer()
