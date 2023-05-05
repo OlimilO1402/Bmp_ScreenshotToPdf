@@ -91,3 +91,6 @@ Friend Property Get DstRect() As WndRect
     Set DstRect = m_DstRect
 End Property
 
+Public Sub ClearScreen()
+    MwinAPI.UpdateWindow m_SrchWnd
+End Sub

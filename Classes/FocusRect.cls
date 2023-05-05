@@ -54,7 +54,8 @@ Friend Sub Draw(NewRect As WndRect)
     If m_Rect.Equals(NewRect) Then Exit Sub
     If m_Visible Then
         'First delete the old Rect
-        DrawFocusRect m_hDC, ByVal m_Rect.Ptr
+        'DrawFocusRect m_hDC, ByVal m_Rect.Ptr
+        Delete
     End If
     'Then we draw the new Rect
     m_Rect.NewC NewRect

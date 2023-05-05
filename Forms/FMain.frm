@@ -462,6 +462,18 @@ Private Sub LBPicList_Click()
     PBScreenshot.Refresh
     'PBScreenshot.AutoRedraw = True
 End Sub
+Private Sub LBPicList_DblClick()
+    Dim scs As Screenshot
+    Dim i As Long: i = LBPicList.ListIndex
+    Set scs = m_ScsList.Item(i)
+    If scs Is Nothing Then
+        MsgBox "pic is nothing"
+    End If
+    Dim s As String: s = InputBox("Page name:", "Edit page name", scs.Name)
+    If StrPtr(s) = 0 Then Exit Sub
+    scs.Name = s
+    LBPicList.List(i) = s
+End Sub
 
 Private Sub TxtL_Change(): TxtChange: End Sub
 Private Sub TxtT_Change(): TxtChange: End Sub

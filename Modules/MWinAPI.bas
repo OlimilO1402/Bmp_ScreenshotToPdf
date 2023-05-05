@@ -28,6 +28,19 @@ Private Declare Function SetWindowRgn Lib "user32" (ByVal hWnd As LongPtr, ByVal
 
 Public Declare Function GetDC Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 
+'BOOL RedrawWindow(
+'  [in] HWND       hWnd,
+'  [in] const RECT *lprcUpdate,
+'  [in] HRGN       hrgnUpdate,
+'  [in] UINT       flags
+');
+'Public Declare Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
+'BOOL UpdateWindow(
+'  [in] HWND hWnd
+');
+Public Declare Function UpdateWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
+
+
 'Public Function HimetricToPixel(Himetric As Single) As Long
 Public Function HimToPix(ByVal Himetric As Single) As Long
     Dim dpi    As Long:    dpi = 96   'dots per inch
