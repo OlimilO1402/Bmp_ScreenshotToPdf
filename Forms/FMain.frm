@@ -1,25 +1,16 @@
 VERSION 5.00
 Begin VB.Form FMain 
    Caption         =   "FMain"
-   ClientHeight    =   7455
+   ClientHeight    =   7140
    ClientLeft      =   225
    ClientTop       =   570
-   ClientWidth     =   13335
+   ClientWidth     =   11175
    Icon            =   "FMain.frx":0000
    LinkTopic       =   "FMain"
-   ScaleHeight     =   497
+   ScaleHeight     =   476
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   889
+   ScaleWidth      =   745
    StartUpPosition =   3  'Windows-Standard
-   Begin VB.CommandButton BtnDragWndRect 
-      Caption         =   "Drag Wnd Rect"
-      Height          =   375
-      Left            =   3120
-      TabIndex        =   16
-      ToolTipText     =   "Move mouse over window & hit Enter"
-      Top             =   360
-      Width           =   1335
-   End
    Begin VB.CommandButton BtnInfo 
       Caption         =   "Info"
       Height          =   375
@@ -58,6 +49,15 @@ Begin VB.Form FMain
       Left            =   4440
       TabIndex        =   0
       Top             =   120
+      Width           =   1335
+   End
+   Begin VB.CommandButton BtnDragWndRect 
+      Caption         =   "Drag Wnd Rect"
+      Height          =   375
+      Left            =   3120
+      TabIndex        =   16
+      ToolTipText     =   "Move mouse over window & hit Enter"
+      Top             =   360
       Width           =   1335
    End
    Begin VB.CommandButton BtnGetWnd 
@@ -239,6 +239,15 @@ Private Function SelectPrinter(ByVal PrinterName As String) As Printer
     Next
 End Function
 
+'Private Function Millimeter_ToTwips(ByVal mm As Double) As Single
+'    Dim dpi    As Single:    dpi = 96   ' dots per inch
+'    Dim ppi    As Single:    ppi = 72   'point per inch
+'    'Dim mmpi   As Single:   mmpi = 25.4 '  mm  per inch
+'    Dim TPPX   As Single:   TPPX = Screen.TwipsPerPixelX
+'    'Dim sc     As Single. SC 0
+'    Millimeter_ToTwips = mm * TPPX * dpi / ppi
+'End Function
+
 Private Sub BtnPrintToPDF_Click()
     Dim pn As String: pn = "Microsoft Print to PDF"
     Set Printer = SelectPrinter(pn)
@@ -247,60 +256,126 @@ Private Sub BtnPrintToPDF_Click()
         Exit Sub
     End If
     
-    Dim s As String: s = "Portrait- or landscape-format? (Portrait = Yes, Landscape = No)"
-    Dim mbr As VbMsgBoxResult: mbr = MsgBox(s, vbYesNoCancel)
+    Dim S As String: S = "Portrait- or landscape-format? (Portrait = Yes, Landscape = No)"
+    Dim mbr As VbMsgBoxResult: mbr = MsgBox(S, vbYesNoCancel)
     If mbr = vbCancel Then Exit Sub
     Dim isFmtPortrait As Boolean: isFmtPortrait = mbr = vbYes
-    Dim dpi    As Single:    dpi = 96   'dots per inch
-    Dim ppi    As Single:    ppi = 72   'point per inch
-    Dim mmpi   As Single:   mmpi = 25.4 'mm per inch
     Dim DA4_w  As Single:  DA4_w = IIf(isFmtPortrait, 210, 297)  'mm
     Dim DA4_h  As Single:  DA4_h = IIf(isFmtPortrait, 297, 210)  'mm
-    Dim marg_L As Single: marg_L = 0 '5
-    Dim marg_R As Single: marg_R = 0 '5
+    Dim marg_L As Single: marg_L = 0 '5 '0 '5 'mm
+    Dim marg_R As Single: marg_R = 0 '5 '0 '5 'mm
+    Dim marg_T As Single: marg_T = 0
+    Dim marg_B As Single: marg_B = 0
     Dim wA4    As Single:    wA4 = DA4_w - marg_L - marg_R
-    Dim TPPX   As Single:   TPPX = Screen.TwipsPerPixelX
-    Dim TPPY   As Single:   TPPX = Screen.TwipsPerPixelY
-    
-    Dim sc_w As Single
-    Dim sc_h As Single
+    Dim hA4    As Single:    hA4 = DA4_h - marg_T - marg_B
+    Dim aar    As AARect:    aar = MPGeom.New_AARect(MPGeom.New_Point(marg_L, marg_T), MPGeom.New_Size(wA4, hA4))
+    Printer.ScaleMode = ScaleModeConstants.vbPixels
+    Dim sc As Double: sc = MPrinter.Millimeter_Scale(Printer.ScaleMode, 1)
+    MPGeom.AARect_Mul aar, sc
 Try: On Error GoTo Catch
-    'With Printer
-        '.ScaleMode = ScaleModeConstants.vbMillimeters
-        '.CurrentX = 5
-        '.CurrentY = 5
-        '.ScaleMode = ScaleModeConstants.vbPixels
-        
-        Printer.Orientation = IIf(isFmtPortrait, PrinterObjectConstants.vbPRORPortrait, PrinterObjectConstants.vbPRORLandscape)
-        Dim W As Long
-        Dim H As Long
-        Dim scs As Screenshot
-        Dim pic As StdPicture
-        Dim u As Long: u = m_ScsList.Count - 1
-        For i = 0 To u
-            Set scs = m_ScsList.Item(i)
-            Set pic = scs.Picture.StdPicture
-            W = PBScreenshot.ScaleX(pic.Width, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
-            H = PBScreenshot.ScaleY(pic.Height, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
-            
-            sc_w = wA4 / ((W / dpi) * mmpi)
-            sc_h = sc_w 'wA4 / ((h / dpi) * mmpi)
-            'Debug.Print sc
-            'sc = 1.184628041
-            'Debug.Print pic.Width
-            Printer.PaintPicture pic, 0, 0, pic.Width * sc_w, pic.Height * sc_h, 0, 0, pic.Width, pic.Height
-            If i < u Then
-                Printer.NewPage
-            End If
-        Next
-        Printer.EndDoc
-        '.KillDoc
-    'End With
-    'Set Printer = Nothing
+    Printer.Orientation = IIf(isFmtPortrait, PrinterObjectConstants.vbPRORPortrait, PrinterObjectConstants.vbPRORLandscape)
+    Dim scs As Screenshot
+    Dim pic As StdPicture
+    Dim u As Long: u = m_ScsList.Count - 1
+    For i = 0 To u
+        Set scs = m_ScsList.Item(i)
+        Set pic = scs.Picture.StdPicture
+        MPrinter.PaintPictureFit pic, aar.Pt.X, aar.Pt.Y, aar.Sz.Width, aar.Sz.Height
+        If i < u Then
+            Printer.NewPage
+        End If
+    Next
+    Printer.EndDoc
     Exit Sub
 Catch:
     'If MsgBox("Retry?", vbInformation Or vbRetryCancel) = vbRetry Then GoTo Try
 End Sub
+
+'Private Sub BtnPrintToPDF_Click()
+'    Dim pn As String: pn = "Microsoft Print to PDF"
+'    Set Printer = SelectPrinter(pn)
+'    If Printer Is Nothing Then
+'        MsgBox "Printer not found: '" & pn & "'"
+'        Exit Sub
+'    End If
+'
+'    Dim S As String: S = "Portrait- or landscape-format? (Portrait = Yes, Landscape = No)"
+'    Dim mbr As VbMsgBoxResult: mbr = MsgBox(S, vbYesNoCancel)
+'    If mbr = vbCancel Then Exit Sub
+'    Dim isFmtPortrait As Boolean: isFmtPortrait = mbr = vbYes
+'    'Dim dpi    As Single:    dpi = 96   'dots per inch
+'    'Dim ppi    As Single:    ppi = 72   'point per inch
+'    'Dim mmpi   As Single:   mmpi = 25.4 'mm per inch
+'    Dim DA4_w  As Single:  DA4_w = IIf(isFmtPortrait, 210, 297)  'mm
+'    Dim DA4_h  As Single:  DA4_h = IIf(isFmtPortrait, 297, 210)  'mm
+'    Dim marg_L As Single: marg_L = 0 '5 '0 '5 'mm
+'    Dim marg_R As Single: marg_R = 0 '5 '0 '5 'mm
+'    Dim marg_T As Single: marg_T = 0
+'    Dim marg_B As Single: marg_B = 0
+'    Dim wA4    As Single:    wA4 = DA4_w - marg_L - marg_R
+'    Dim hA4    As Single:    hA4 = DA4_h - marg_T - marg_B
+'    Dim aar    As AARect:    aar = MPGeom.New_AARect(MPGeom.New_Point(marg_L, marg_T), MPGeom.New_Size(wA4, hA4))
+'    'Dim TPPX   As Single:   TPPX = Screen.TwipsPerPixelX
+'    'Dim TPPY   As Single:   TPPY = Screen.TwipsPerPixelY
+'
+'    'Dim sc_w As Single
+'    'Dim sc_h As Single
+'    Dim sc As Double: sc = MPrinter.Millimeter_Scale(Printer.ScaleMode, 1)
+'    MPGeom.AARect_Mul aar, sc
+'Try: On Error GoTo Catch
+'    'With Printer
+'        '.ScaleMode = ScaleModeConstants.vbMillimeters
+'        '.CurrentX = 5
+'        '.CurrentY = 5
+'        '.ScaleMode = ScaleModeConstants.vbPixels
+'
+'        Printer.Orientation = IIf(isFmtPortrait, PrinterObjectConstants.vbPRORPortrait, PrinterObjectConstants.vbPRORLandscape)
+'        'Printer.ScaleMode = ScaleModeConstants.vbPixels
+'        'Dim W As Long
+'        'Dim H As Long
+'        Dim scs As Screenshot
+'        Dim pic As StdPicture
+'        Dim u As Long: u = m_ScsList.Count - 1
+'        For i = 0 To u
+'            Set scs = m_ScsList.Item(i)
+'            Set pic = scs.Picture.StdPicture
+'            'W = PBScreenshot.ScaleX(pic.Width, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
+'            'H = PBScreenshot.ScaleY(pic.Height, ScaleModeConstants.vbHimetric, ScaleModeConstants.vbPixels)
+'
+'            'sc_w = wA4 / ((W / dpi) * mmpi)
+'            'sc_h = sc_w 'wA4 / ((h / dpi) * mmpi)
+'            'Debug.Print sc
+'            'sc = 1.184628041
+'            'Debug.Print pic.Width
+'            'Printer.PSet (100, 100)
+'            'Printer.PaintPicture pic, marg_L * TPPX * sc_w * dpi / ppi, marg_L * TPPX * sc_w * dpi / ppi, pic.Width * sc_w, pic.Height * sc_h, 0, 0, pic.Width, pic.Height
+'            'Dim X1 As Single: X1 = marg_L * TPPX * sc_w * dpi / ppi
+'            'Dim Y1 As Single: Y1 = marg_L * TPPX * sc_w * dpi / ppi
+'            'Printer.PaintPicture pic, marg_L * TPPX * sc_w * dpi / ppi, marg_L * TPPX * sc_w * dpi / ppi, pic.Width * sc_w, pic.Height * sc_h, 0, 0, pic.Width, pic.Height
+'            MPrinter.PaintPictureFit pic, aar.Pt.X, aar.Pt.Y, aar.Sz.Width, aar.Sz.Height
+'            If i < u Then
+'                Printer.NewPage
+'            End If
+'        Next
+'        Printer.EndDoc
+'        '.KillDoc
+'    'End With
+'    'Set Printer = Nothing
+'    'Debug.Print Printer.DeviceName
+'    'Debug.Print Printer.DriverName
+'    'Debug.Print Printer.
+'    Exit Sub
+'Catch:
+'    'If MsgBox("Retry?", vbInformation Or vbRetryCancel) = vbRetry Then GoTo Try
+'End Sub
+
+
+
+
+
+
+
+
 
 Private Sub BtnSavePictures_Click()
     Dim i As Long
@@ -371,25 +446,25 @@ End Sub
 Private Sub BtnDragWndRect_Click()
     Dim FSB As New FScreenshotBorders
     'Dim R As WndRect: Set R = m_FocusRect.WndRect.Clone
-    Dim R As WndRect: Set R = m_Screen.SrcRect.Clone
-    If FSB.ShowDialog(Me, R) = vbCancel Then Exit Sub
+    Dim r As WndRect: Set r = m_Screen.SrcRect.Clone
+    If FSB.ShowDialog(Me, r) = vbCancel Then Exit Sub
     'm_FocusRect.WndRect.NewC R
-    m_Screen.SrcRect.NewC R
+    m_Screen.SrcRect.NewC r
     UpdateView
 End Sub
 
 Private Sub Timer1_Timer()
-    Dim p As WinAPIPoint
-    Dim hr As Long: hr = GetCursorPos(p)
+    Dim P As WinAPIPoint
+    Dim hr As Long: hr = GetCursorPos(P)
     If hr = 0 Then Exit Sub
     'Dim R As WinAPIRect:  R = m_Screen.RectFromPoint(p)
-    Dim R As WndRect:  Set R = MNew.WndRectFromMousePoint(p) ' m_Screen.RectFromPoint(p)
-    TxtL.Text = R.Left
-    TxtT.Text = R.Top
-    TxtW.Text = R.Width  '.Right - R.Left
-    TxtH.Text = R.Height '.Bottom - R.Top
+    Dim r As WndRect:  Set r = MNew.WndRectFromMousePoint(P) ' m_Screen.RectFromPoint(p)
+    TxtL.Text = r.Left
+    TxtT.Text = r.Top
+    TxtW.Text = r.Width  '.Right - R.Left
+    TxtH.Text = r.Height '.Bottom - R.Top
     'm_FocusRect.WndRect.NewC R
-    m_FocusRect.Draw R
+    m_FocusRect.Draw r
 End Sub
 
 'Private Sub BtnSet_Click()
@@ -469,10 +544,10 @@ Private Sub LBPicList_DblClick()
     If scs Is Nothing Then
         MsgBox "pic is nothing"
     End If
-    Dim s As String: s = InputBox("Page name:", "Edit page name", scs.Name)
-    If StrPtr(s) = 0 Then Exit Sub
-    scs.Name = s
-    LBPicList.List(i) = s
+    Dim S As String: S = InputBox("Page name:", "Edit page name", scs.Name)
+    If StrPtr(S) = 0 Then Exit Sub
+    scs.Name = S
+    LBPicList.List(i) = S
 End Sub
 
 Private Sub TxtL_Change(): TxtChange: End Sub
@@ -482,11 +557,11 @@ Private Sub TxtH_Change(): TxtChange: End Sub
 Private Sub TxtChange()
     If Timer1.Enabled Or bInit Then Exit Sub
     'Timer1.Enabled = False
-    Dim R As WndRect: Set R = GetWndRect
-    If R Is Nothing Then Exit Sub
+    Dim r As WndRect: Set r = GetWndRect
+    If r Is Nothing Then Exit Sub
     'Set m_Screen = MNew.SScreen(Me.PBScreenshot, r)
-    m_Screen.SrcRect.NewC R
-    m_FocusRect.Draw R
+    m_Screen.SrcRect.NewC r
+    m_FocusRect.Draw r
 End Sub
 
 Private Sub TxtL_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown 1, TxtL, KeyCode, Shift: End Sub
@@ -505,16 +580,16 @@ Private Sub TxtKeyDown(ByVal prop As Long, tb As TextBox, KeyCode As Integer, Sh
         'Case KeyCodeConstants.vbKeyRight: v = v + 1
         'End Select
     
-        Dim R As WndRect: Set R = m_FocusRect.WndRect.Clone
+        Dim r As WndRect: Set r = m_FocusRect.WndRect.Clone
         Dim v As Long
     
         Select Case prop
-        Case 1: v = R.Left:   v = v + d: R.Left = v
-        Case 2: v = R.Top:    v = v + d: R.Top = v
+        Case 1: v = r.Left:   v = v + d: r.Left = v
+        Case 2: v = r.Top:    v = v + d: r.Top = v
         'Case 3: v = R.Right:  v = v + d: R.Right = v
-        Case 3: v = R.Width:  v = v + d: R.Width = v
+        Case 3: v = r.Width:  v = v + d: r.Width = v
         'Case 4: v = R.Bottom: v = v + d: R.Bottom = v
-        Case 4: v = R.Height: v = v + d: R.Height = v
+        Case 4: v = r.Height: v = v + d: r.Height = v
         End Select
         'Shift          = 1;
         'Strg           = 2;
@@ -535,7 +610,7 @@ Private Sub TxtKeyDown(ByVal prop As Long, tb As TextBox, KeyCode As Integer, Sh
         'bInit = True
         'tb.Text = CStr(v)
         'bInit = False
-        m_Screen.SrcRect.NewC R
+        m_Screen.SrcRect.NewC r
         
         UpdateView
     End Select
