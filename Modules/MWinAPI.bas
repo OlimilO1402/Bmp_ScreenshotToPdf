@@ -40,6 +40,14 @@ Public Declare Function GetDC Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 ');
 Public Declare Function UpdateWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
 
+Public Function New_WinAPIRect(ByVal L As Long, ByVal T As Long, ByVal W As Long, ByVal H As Long) As WinAPIRect
+    With New_WinAPIRect
+        .Left = L
+        .Top = T
+        .Right = L + W
+        .Bottom = T + H
+    End With
+End Function
 
 'Public Function HimetricToPixel(Himetric As Single) As Long
 Public Function HimToPix(ByVal Himetric As Single) As Long

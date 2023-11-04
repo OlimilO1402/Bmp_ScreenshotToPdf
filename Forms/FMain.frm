@@ -11,14 +11,6 @@ Begin VB.Form FMain
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   745
    StartUpPosition =   3  'Windows-Standard
-   Begin VB.CommandButton BtnInfo 
-      Caption         =   "Info"
-      Height          =   375
-      Left            =   9720
-      TabIndex        =   14
-      Top             =   120
-      Width           =   1335
-   End
    Begin VB.CommandButton BtnClear 
       Caption         =   "Clear"
       Height          =   375
@@ -27,12 +19,28 @@ Begin VB.Form FMain
       Top             =   120
       Width           =   1335
    End
+   Begin VB.CommandButton BtnOpenPictures 
+      Caption         =   "OpenPictures"
+      Height          =   375
+      Left            =   7080
+      TabIndex        =   17
+      Top             =   360
+      Width           =   1335
+   End
+   Begin VB.CommandButton BtnInfo 
+      Caption         =   "Info"
+      Height          =   375
+      Left            =   10440
+      TabIndex        =   14
+      Top             =   120
+      Width           =   615
+   End
    Begin VB.CommandButton BtnSavePictures 
       Caption         =   "SavePictures"
       Height          =   375
       Left            =   7080
       TabIndex        =   15
-      Top             =   120
+      Top             =   0
       Width           =   1335
    End
    Begin VB.CommandButton BtnPrintToPDF 
@@ -229,15 +237,15 @@ Private Sub BtnInfo_Click()
     MsgBox App.CompanyName & " " & App.EXEName & " v" & App.Major & "." & App.Minor & "." & App.Revision & vbCrLf & App.FileDescription
 End Sub
 
-Private Function SelectPrinter(ByVal PrinterName As String) As Printer
-    Dim i As Long
-    For i = 0 To Printers.Count - 1
-        If Printers(i).DeviceName = PrinterName Then '"Microsoft Print to PDF" Then
-            Set SelectPrinter = Printers(i)
-            Exit For
-        End If
-    Next
-End Function
+'Private Function SelectPrinter(ByVal PrinterName As String) As Printer
+'    Dim i As Long
+'    For i = 0 To Printers.Count - 1
+'        If Printers(i).DeviceName = PrinterName Then '"Microsoft Print to PDF" Then
+'            Set SelectPrinter = Printers(i)
+'            Exit For
+'        End If
+'    Next
+'End Function
 
 'Private Function Millimeter_ToTwips(ByVal mm As Double) As Single
 '    Dim dpi    As Single:    dpi = 96   ' dots per inch
@@ -256,8 +264,8 @@ Private Sub BtnPrintToPDF_Click()
         Exit Sub
     End If
     
-    Dim S As String: S = "Portrait- or landscape-format? (Portrait = Yes, Landscape = No)"
-    Dim mbr As VbMsgBoxResult: mbr = MsgBox(S, vbYesNoCancel)
+    Dim s As String: s = "Portrait- or landscape-format? (Portrait = Yes, Landscape = No)"
+    Dim mbr As VbMsgBoxResult: mbr = MsgBox(s, vbYesNoCancel)
     If mbr = vbCancel Then Exit Sub
     Dim isFmtPortrait As Boolean: isFmtPortrait = mbr = vbYes
     Dim DA4_w  As Single:  DA4_w = IIf(isFmtPortrait, 210, 297)  'mm
@@ -372,16 +380,76 @@ End Sub
 
 
 
+'Private Sub mnuFileOpen_Click()
+'    BtnOpenPictures_Click
+'End Sub
 
-
-
+Private Sub BtnOpenPictures_Click()
+    'Dim OFD As OpenFileDialog: Set OFD = New OpenFileDialog
+    'OFD.Filter = "Bitmaps (*.bmp)|*.bmp|All files (*.*)|*.*"
+    'If OFD.ShowDialog(Me) = vbCancel Then Exit Sub
+    'Dim PFN As String: PFN = OFD.FileName
+    'Dim FD As New OpenFileDialog
+    'If Not m_Bmp Is Nothing Then FD.FileName = m_Bmp.FileName
+    Dim aPFN As String
+    Dim aPFNList As List ': If Not m_bmp Is Nothing Then aPFN = m_bmp.FileName
+    Set aPFNList = MMain.GetOpenFileNames(Me, aPFN)
+    'If Len(aPFN) = 0 Then Exit Sub
+    If aPFNList.IsEmpty Then Exit Sub
+    Dim i As Long
+    For i = 0 To aPFNList.Count - 1
+        aPFN = aPFNList.Item(i)
+        Dim pos As Long: pos = InStrRev(aPFN, ".")
+        Dim ext As String: ext = LCase(Right(aPFN, Len(aPFN) - pos))
+        Dim pic As StdPicture
+    'If ext = "bmp" Then
+    '    Set m_bmp = MNew.Bitmap(aPFN)
+    'Else
+        Select Case ext
+        Case "png": Set pic = MLoadPng.LoadPictureGDIp(aPFN)
+        'Case "gif"
+                    'Set PBBitmap.Picture = LoadPicture(aPFN)
+                    'Dim ipd As IPictureDisp: Set ipd = LoadPicture(aPFN)
+                    'Set PBBitmap.Picture = ipd
+                    'Dim sdp As StdPicture: Set sdp = LoadPicture(aPFN)
+                    'Set pic = LoadPicture(aPFN)
+                    'Set PBBitmap.Picture = sdp
+                    'UpdateView
+                    'Exit Sub
+        ', "jpg": Set pic = LoadPicture(aPFN)
+        Case Else:  Set pic = LoadPicture(aPFN)
+        End Select
+        PBScreenshot.ScaleMode = ScaleModeConstants.vbPixels
+        Set PBScreenshot.Picture = pic
+        PBScreenshot.ScaleMode = ScaleModeConstants.vbPixels
+        Set pic = PBScreenshot.Picture
+        Debug.Print pic.Width & " - " & pic.Height
+        'Dim r As WndRect: Set r = MNew.WndRect(MwinAPI.New_WinAPIRect(0, 0, pic.Width / Screen.TwipsPerPixelX, pic.Height / Screen.TwipsPerPixelY))
+        Dim R As WndRect: Set R = MNew.WndRect(MwinAPI.New_WinAPIRect(0, 0, pic.Width, pic.Height))
+        Dim scs As Screenshot: Set scs = MNew.Screenshot(MNew.StdPicBmp(pic), R)
+        scs.Name = "Bild_" & m_ScsList.Count + 1
+        m_ScsList.Add scs
+        'Set m_bmp = MNew.BitmapSP(pic)
+        
+    'm_FocusRect.Delete
+    'If scs Is Nothing Then
+    '    MsgBox "screenshot is nothing"
+    '    Exit Sub
+    'End If
+    'm_ScsList.Add scs
+        LBPicList.AddItem scs.Name
+        LBPicList.ListIndex = LBPicList.ListCount - 1
+        
+    Next
+    'UpdateView
+End Sub
 
 
 Private Sub BtnSavePictures_Click()
     Dim i As Long
     For i = 0 To LBPicList.ListCount - 1
         LBPicList.ListIndex = i
-        SavePicture PBScreenshot.Image, FNm & "\Bild_" & CStr(i) & ".bmp"
+        SavePicture PBScreenshot.image, FNm & "\Bild_" & CStr(i) & ".bmp"
     Next
 End Sub
 
@@ -446,25 +514,25 @@ End Sub
 Private Sub BtnDragWndRect_Click()
     Dim FSB As New FScreenshotBorders
     'Dim R As WndRect: Set R = m_FocusRect.WndRect.Clone
-    Dim r As WndRect: Set r = m_Screen.SrcRect.Clone
-    If FSB.ShowDialog(Me, r) = vbCancel Then Exit Sub
+    Dim R As WndRect: Set R = m_Screen.SrcRect.Clone
+    If FSB.ShowDialog(Me, R) = vbCancel Then Exit Sub
     'm_FocusRect.WndRect.NewC R
-    m_Screen.SrcRect.NewC r
+    m_Screen.SrcRect.NewC R
     UpdateView
 End Sub
 
 Private Sub Timer1_Timer()
-    Dim P As WinAPIPoint
-    Dim hr As Long: hr = GetCursorPos(P)
+    Dim p As WinAPIPoint
+    Dim hr As Long: hr = GetCursorPos(p)
     If hr = 0 Then Exit Sub
     'Dim R As WinAPIRect:  R = m_Screen.RectFromPoint(p)
-    Dim r As WndRect:  Set r = MNew.WndRectFromMousePoint(P) ' m_Screen.RectFromPoint(p)
-    TxtL.Text = r.Left
-    TxtT.Text = r.Top
-    TxtW.Text = r.Width  '.Right - R.Left
-    TxtH.Text = r.Height '.Bottom - R.Top
+    Dim R As WndRect:  Set R = MNew.WndRectFromMousePoint(p) ' m_Screen.RectFromPoint(p)
+    TxtL.Text = R.Left
+    TxtT.Text = R.Top
+    TxtW.Text = R.Width  '.Right - R.Left
+    TxtH.Text = R.Height '.Bottom - R.Top
     'm_FocusRect.WndRect.NewC R
-    m_FocusRect.Draw r
+    m_FocusRect.Draw R
 End Sub
 
 'Private Sub BtnSet_Click()
@@ -544,10 +612,10 @@ Private Sub LBPicList_DblClick()
     If scs Is Nothing Then
         MsgBox "pic is nothing"
     End If
-    Dim S As String: S = InputBox("Page name:", "Edit page name", scs.Name)
-    If StrPtr(S) = 0 Then Exit Sub
-    scs.Name = S
-    LBPicList.List(i) = S
+    Dim s As String: s = InputBox("Page name:", "Edit page name", scs.Name)
+    If StrPtr(s) = 0 Then Exit Sub
+    scs.Name = s
+    LBPicList.List(i) = s
 End Sub
 
 Private Sub TxtL_Change(): TxtChange: End Sub
@@ -557,11 +625,11 @@ Private Sub TxtH_Change(): TxtChange: End Sub
 Private Sub TxtChange()
     If Timer1.Enabled Or bInit Then Exit Sub
     'Timer1.Enabled = False
-    Dim r As WndRect: Set r = GetWndRect
-    If r Is Nothing Then Exit Sub
+    Dim R As WndRect: Set R = GetWndRect
+    If R Is Nothing Then Exit Sub
     'Set m_Screen = MNew.SScreen(Me.PBScreenshot, r)
-    m_Screen.SrcRect.NewC r
-    m_FocusRect.Draw r
+    m_Screen.SrcRect.NewC R
+    m_FocusRect.Draw R
 End Sub
 
 Private Sub TxtL_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown 1, TxtL, KeyCode, Shift: End Sub
@@ -580,16 +648,16 @@ Private Sub TxtKeyDown(ByVal prop As Long, tb As TextBox, KeyCode As Integer, Sh
         'Case KeyCodeConstants.vbKeyRight: v = v + 1
         'End Select
     
-        Dim r As WndRect: Set r = m_FocusRect.WndRect.Clone
+        Dim R As WndRect: Set R = m_FocusRect.WndRect.Clone
         Dim v As Long
     
         Select Case prop
-        Case 1: v = r.Left:   v = v + d: r.Left = v
-        Case 2: v = r.Top:    v = v + d: r.Top = v
+        Case 1: v = R.Left:   v = v + d: R.Left = v
+        Case 2: v = R.Top:    v = v + d: R.Top = v
         'Case 3: v = R.Right:  v = v + d: R.Right = v
-        Case 3: v = r.Width:  v = v + d: r.Width = v
+        Case 3: v = R.Width:  v = v + d: R.Width = v
         'Case 4: v = R.Bottom: v = v + d: R.Bottom = v
-        Case 4: v = r.Height: v = v + d: r.Height = v
+        Case 4: v = R.Height: v = v + d: R.Height = v
         End Select
         'Shift          = 1;
         'Strg           = 2;
@@ -610,7 +678,7 @@ Private Sub TxtKeyDown(ByVal prop As Long, tb As TextBox, KeyCode As Integer, Sh
         'bInit = True
         'tb.Text = CStr(v)
         'bInit = False
-        m_Screen.SrcRect.NewC r
+        m_Screen.SrcRect.NewC R
         
         UpdateView
     End Select
