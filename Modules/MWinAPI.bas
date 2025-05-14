@@ -19,8 +19,8 @@ Public Type WinAPISize
 End Type
 
         
-Const RGN_OR   As Long = 2
-Const RGN_DIFF As Long = 4
+Private Const RGN_OR   As Long = 2
+Private Const RGN_DIFF As Long = 4
 
 Private Declare Function CreateRectRgn Lib "gdi32" (ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As LongPtr
 Private Declare Function CombineRgn Lib "gdi32" (ByVal hDestRgn As LongPtr, ByVal hSrcRgn1 As LongPtr, ByVal hSrcRgn2 As LongPtr, ByVal nCombineMode As Long) As Long

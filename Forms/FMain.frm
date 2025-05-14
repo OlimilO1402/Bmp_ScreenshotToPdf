@@ -4,19 +4,35 @@ Begin VB.Form FMain
    ClientHeight    =   7140
    ClientLeft      =   225
    ClientTop       =   570
-   ClientWidth     =   11175
+   ClientWidth     =   13170
    Icon            =   "FMain.frx":0000
    LinkTopic       =   "FMain"
    ScaleHeight     =   476
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   745
+   ScaleWidth      =   878
    StartUpPosition =   3  'Windows-Standard
+   Begin VB.CommandButton BtnInfo 
+      Caption         =   "Info"
+      Height          =   375
+      Left            =   11040
+      TabIndex        =   14
+      Top             =   360
+      Width           =   615
+   End
    Begin VB.CommandButton BtnClear 
       Caption         =   "Clear"
       Height          =   375
-      Left            =   8400
+      Left            =   9720
       TabIndex        =   12
-      Top             =   120
+      Top             =   360
+      Width           =   1335
+   End
+   Begin VB.CommandButton BtnSavePictures 
+      Caption         =   "SavePictures"
+      Height          =   375
+      Left            =   8400
+      TabIndex        =   15
+      Top             =   360
       Width           =   1335
    End
    Begin VB.CommandButton BtnOpenPictures 
@@ -27,28 +43,12 @@ Begin VB.Form FMain
       Top             =   360
       Width           =   1335
    End
-   Begin VB.CommandButton BtnInfo 
-      Caption         =   "Info"
-      Height          =   375
-      Left            =   10440
-      TabIndex        =   14
-      Top             =   120
-      Width           =   615
-   End
-   Begin VB.CommandButton BtnSavePictures 
-      Caption         =   "SavePictures"
-      Height          =   375
-      Left            =   7080
-      TabIndex        =   15
-      Top             =   0
-      Width           =   1335
-   End
    Begin VB.CommandButton BtnPrintToPDF 
       Caption         =   "Create PDF"
       Height          =   375
       Left            =   5760
       TabIndex        =   11
-      Top             =   120
+      Top             =   360
       Width           =   1335
    End
    Begin VB.CommandButton BtnScreenshot 
@@ -56,7 +56,7 @@ Begin VB.Form FMain
       Height          =   375
       Left            =   4440
       TabIndex        =   0
-      Top             =   120
+      Top             =   360
       Width           =   1335
    End
    Begin VB.CommandButton BtnDragWndRect 
@@ -196,8 +196,9 @@ Private i As Long
 Private m_ScsList   As List ' As Collection 'Of Screenshot
 Private m_FocusRect As FocusRect
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As WinAPIPoint) As Long
-
+Private OldRect As WndRect
 Private bInit As Boolean
+
 
 'the class SScreen has a function Shot that returns a Screenshot-object
 'm_Screen.Shot As Screenshot
@@ -223,6 +224,15 @@ Private Sub Form_Load()
     Set m_FocusRect = MNew.FocusRect(m_Screen.DesktophDC)
     BtnClear_Click
     bInit = False
+End Sub
+
+Private Sub Form_LostFocus()
+    Debug.Print "Form_LostFocus"
+    If Timer1.Enabled Then BtnGetWnd_Click
+End Sub
+Private Sub Form_Deactivate()
+    Debug.Print "Form_Deactivate"
+    If Timer1.Enabled Then BtnGetWnd_Click
 End Sub
 
 Private Sub Form_Resize()
@@ -532,7 +542,11 @@ Private Sub Timer1_Timer()
     TxtW.Text = R.Width  '.Right - R.Left
     TxtH.Text = R.Height '.Bottom - R.Top
     'm_FocusRect.WndRect.NewC R
+    If Not OldRect Is Nothing Then
+        If Not OldRect.Equals(R) Then m_FocusRect.Draw OldRect
+    End If
     m_FocusRect.Draw R
+    Set OldRect = R.Clone
 End Sub
 
 'Private Sub BtnSet_Click()
@@ -629,7 +643,7 @@ Private Sub TxtChange()
     If R Is Nothing Then Exit Sub
     'Set m_Screen = MNew.SScreen(Me.PBScreenshot, r)
     m_Screen.SrcRect.NewC R
-    m_FocusRect.Draw R
+    'm_FocusRect.Draw R
 End Sub
 
 Private Sub TxtL_KeyDown(KeyCode As Integer, Shift As Integer): TxtKeyDown 1, TxtL, KeyCode, Shift: End Sub
