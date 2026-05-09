@@ -9,8 +9,8 @@ Public Type WinAPIRect
 End Type
 
 Public Type WinAPIPoint
-    X As Long
-    Y As Long
+    x As Long
+    y As Long
 End Type
 
 Public Type WinAPISize
@@ -22,11 +22,11 @@ End Type
 Private Const RGN_OR   As Long = 2
 Private Const RGN_DIFF As Long = 4
 
-Private Declare Function CreateRectRgn Lib "gdi32" (ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long) As LongPtr
+Private Declare Function CreateRectRgn Lib "gdi32" (ByVal x1 As Long, ByVal y1 As Long, ByVal x2 As Long, ByVal y2 As Long) As LongPtr
 Private Declare Function CombineRgn Lib "gdi32" (ByVal hDestRgn As LongPtr, ByVal hSrcRgn1 As LongPtr, ByVal hSrcRgn2 As LongPtr, ByVal nCombineMode As Long) As Long
-Private Declare Function SetWindowRgn Lib "user32" (ByVal hWnd As LongPtr, ByVal hRgn As LongPtr, ByVal bRedraw As Long) As Long
+Private Declare Function SetWindowRgn Lib "user32" (ByVal hwnd As LongPtr, ByVal hRgn As LongPtr, ByVal bRedraw As Long) As Long
 
-Public Declare Function GetDC Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
+Public Declare Function GetDC Lib "user32" (ByVal hwnd As LongPtr) As LongPtr
 
 'BOOL RedrawWindow(
 '  [in] HWND       hWnd,
@@ -38,14 +38,14 @@ Public Declare Function GetDC Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
 'BOOL UpdateWindow(
 '  [in] HWND hWnd
 ');
-Public Declare Function UpdateWindow Lib "user32" (ByVal hWnd As LongPtr) As Long
+Public Declare Function UpdateWindow Lib "user32" (ByVal hwnd As LongPtr) As Long
 
-Public Function New_WinAPIRect(ByVal L As Long, ByVal T As Long, ByVal W As Long, ByVal H As Long) As WinAPIRect
+Public Function New_WinAPIRect(ByVal l As Long, ByVal t As Long, ByVal W As Long, ByVal H As Long) As WinAPIRect
     With New_WinAPIRect
-        .Left = L
-        .Top = T
-        .Right = L + W
-        .Bottom = T + H
+        .Left = l
+        .Top = t
+        .Right = l + W
+        .Bottom = t + H
     End With
 End Function
 
@@ -57,10 +57,10 @@ Public Function HimToPix(ByVal Himetric As Single) As Long
     HimToPix = (Himetric / mmpi) * dpi 'HiDpi
 End Function
 
-Public Function Max(V1, V2)
+Private Function Max(V1, V2)
     If V1 > V2 Then Max = V1 Else Max = V2
 End Function
-Public Function Min(V1, V2)
+Private Function Min(V1, V2)
     If V1 < V2 Then Min = V1 Else Min = V2
 End Function
 
@@ -83,5 +83,5 @@ Public Sub GlassForm(aForm As Form)
     Dim RCombined As LongPtr: RCombined = CreateRectRgn(0, 0, 0, 0)
     CombineRgn RCombined, ROuter, RInner, RGN_DIFF
     
-    Call SetWindowRgn(aForm.hWnd, RCombined, True)
+    Call SetWindowRgn(aForm.hwnd, RCombined, True)
 End Sub
