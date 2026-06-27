@@ -15,17 +15,24 @@ Option Explicit
 
 Private m_Rect As MwinAPI.WinAPIRect
 
-'https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowrect
-Private Declare Function GetWindowRect Lib "user32" (ByVal hWnd As LongPtr, lpRect As WinAPIRect) As Long
+#If VBA7 Then
+    'https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowrect
+    Private Declare Function GetWindowRect Lib "user32" (ByVal hwnd As LongPtr, lpRect As WinAPIRect) As Long
+    'https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-windowfrompoint
+    Private Declare Function WindowFromPoint Lib "user32" (ByVal xPoint As Long, ByVal yPoint As Long) As LongPtr
+    'Private Declare Function ChildWindowFromPoint Lib "user32" (ByVal hWndParent As LongPtr, ByVal pt As POINTAPI) As LongPtr
+    Private Declare Function ChildWindowFromPoint Lib "user32" (ByVal hWndParent As LongPtr, ByVal xPoint As Long, ByVal yPoint As Long) As LongPtr
+#Else
+    'https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowrect
+    Private Declare Function GetWindowRect Lib "user32" (ByVal hwnd As LongPtr, lpRect As WinAPIRect) As Long
+    'https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-windowfrompoint
+    Private Declare Function WindowFromPoint Lib "user32" (ByVal xPoint As Long, ByVal yPoint As Long) As LongPtr
+    'Private Declare Function ChildWindowFromPoint Lib "user32" (ByVal hWndParent As LongPtr, ByVal pt As POINTAPI) As LongPtr
+    Private Declare Function ChildWindowFromPoint Lib "user32" (ByVal hWndParent As LongPtr, ByVal xPoint As Long, ByVal yPoint As Long) As LongPtr
+#End If
 
-'https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-windowfrompoint
-Private Declare Function WindowFromPoint Lib "user32" (ByVal xPoint As Long, ByVal yPoint As Long) As LongPtr
-
-'Private Declare Function ChildWindowFromPoint Lib "user32" (ByVal hWndParent As LongPtr, ByVal pt As POINTAPI) As LongPtr
-Private Declare Function ChildWindowFromPoint Lib "user32" (ByVal hWndParent As LongPtr, ByVal xPoint As Long, ByVal yPoint As Long) As LongPtr
-
-Friend Sub New_(R As WinAPIRect)
-    m_Rect = R
+Friend Sub New_(r As WinAPIRect)
+    m_Rect = r
 End Sub
 Friend Sub NewC(other As WndRect)
     m_Rect.Left = other.Left
@@ -35,16 +42,16 @@ Friend Sub NewC(other As WndRect)
 End Sub
 
 Friend Sub NewFromMousePoint(mousepoint As WinAPIPoint)
-    Dim hWndParent As LongPtr: hWndParent = WindowFromPoint(mousepoint.X, mousepoint.Y)
-    Dim hWndChild  As LongPtr: hWndChild = ChildWindowFromPoint(hWndParent, mousepoint.X, mousepoint.Y)
+    Dim hWndParent As LongPtr: hWndParent = WindowFromPoint(mousepoint.X, mousepoint.y)
+    Dim hWndChild  As LongPtr: hWndChild = ChildWindowFromPoint(hWndParent, mousepoint.X, mousepoint.y)
     'Dim hWnd       As LongPtr: If hWndChild = 0 Then hWnd = hWndParent Else hWnd = hWndChild
     'If hWnd = 0 Then Exit Sub
     'NewFromHWnd hWnd
     NewFromHWnd IIf(hWndChild, hWndChild, hWndParent)
 End Sub
 
-Public Sub NewFromHWnd(hWnd As LongPtr)
-    Dim b As Boolean: b = GetWindowRect(hWnd, m_Rect)
+Public Sub NewFromHWnd(hwnd As LongPtr)
+    Dim b As Boolean: b = GetWindowRect(hwnd, m_Rect)
     If Not b Then ErrHandler "FromHWnd", , b
 End Sub
 
@@ -133,9 +140,9 @@ Friend Function ToStr() As String
     End With
 End Function
 
-Public Function Move(Optional L, Optional T, Optional W, Optional H) As WndRect
+Public Function Move(Optional L, Optional t, Optional W, Optional H) As WndRect
     If Not IsMissing(L) Then m_Rect.Left = L
-    If Not IsMissing(T) Then m_Rect.Top = T
+    If Not IsMissing(t) Then m_Rect.Top = t
     If Not IsMissing(W) Then Me.Width = W
     If Not IsMissing(H) Then Me.Height = H
     Set Move = Me

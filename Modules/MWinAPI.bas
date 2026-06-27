@@ -9,7 +9,7 @@ Public Type WinAPIRect
 End Type
 
 Public Type WinAPIPoint
-    x As Long
+    X As Long
     y As Long
 End Type
 
@@ -22,29 +22,28 @@ End Type
 Private Const RGN_OR   As Long = 2
 Private Const RGN_DIFF As Long = 4
 
-Private Declare Function CreateRectRgn Lib "gdi32" (ByVal x1 As Long, ByVal y1 As Long, ByVal x2 As Long, ByVal y2 As Long) As LongPtr
-Private Declare Function CombineRgn Lib "gdi32" (ByVal hDestRgn As LongPtr, ByVal hSrcRgn1 As LongPtr, ByVal hSrcRgn2 As LongPtr, ByVal nCombineMode As Long) As Long
-Private Declare Function SetWindowRgn Lib "user32" (ByVal hwnd As LongPtr, ByVal hRgn As LongPtr, ByVal bRedraw As Long) As Long
+#If VBA7 Then
+    Private Declare PtrSafe Function CreateRectRgn Lib "gdi32" (ByVal x1 As Long, ByVal y1 As Long, ByVal x2 As Long, ByVal y2 As Long) As LongPtr
+    Private Declare PtrSafe Function CombineRgn Lib "gdi32" (ByVal hDestRgn As LongPtr, ByVal hSrcRgn1 As LongPtr, ByVal hSrcRgn2 As LongPtr, ByVal nCombineMode As Long) As Long
+    Private Declare PtrSafe Function SetWindowRgn Lib "user32" (ByVal hwnd As LongPtr, ByVal hRgn As LongPtr, ByVal bRedraw As Long) As Long
+    Public Declare PtrSafe Function GetDC Lib "user32" (ByVal hwnd As LongPtr) As LongPtr
+    Public Declare PtrSafe Function UpdateWindow Lib "user32" (ByVal hwnd As LongPtr) As Long
+#Else
+    Private Declare Function CreateRectRgn Lib "gdi32" (ByVal x1 As Long, ByVal y1 As Long, ByVal x2 As Long, ByVal y2 As Long) As LongPtr
+    Private Declare Function CombineRgn Lib "gdi32" (ByVal hDestRgn As LongPtr, ByVal hSrcRgn1 As LongPtr, ByVal hSrcRgn2 As LongPtr, ByVal nCombineMode As Long) As Long
+    Private Declare Function SetWindowRgn Lib "user32" (ByVal hwnd As LongPtr, ByVal hRgn As LongPtr, ByVal bRedraw As Long) As Long
+    Public Declare Function GetDC Lib "user32" (ByVal hwnd As LongPtr) As LongPtr
+    'BOOL UpdateWindow([in] HWND hWnd);
+    Public Declare Function UpdateWindow Lib "user32" (ByVal hwnd As LongPtr) As Long
+    'BOOL RedrawWindow([in] HWND hWnd, [in] const RECT *lprcUpdate, [in] HRGN hrgnUpdate, [in] UINT flags);
+    'Public Declare Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
+#End If
 
-Public Declare Function GetDC Lib "user32" (ByVal hwnd As LongPtr) As LongPtr
-
-'BOOL RedrawWindow(
-'  [in] HWND       hWnd,
-'  [in] const RECT *lprcUpdate,
-'  [in] HRGN       hrgnUpdate,
-'  [in] UINT       flags
-');
-'Public Declare Function RedrawWindow Lib "user32" (ByVal hWnd As LongPtr) As LongPtr
-'BOOL UpdateWindow(
-'  [in] HWND hWnd
-');
-Public Declare Function UpdateWindow Lib "user32" (ByVal hwnd As LongPtr) As Long
-
-Public Function New_WinAPIRect(ByVal l As Long, ByVal t As Long, ByVal W As Long, ByVal H As Long) As WinAPIRect
+Public Function New_WinAPIRect(ByVal L As Long, ByVal t As Long, ByVal W As Long, ByVal H As Long) As WinAPIRect
     With New_WinAPIRect
-        .Left = l
+        .Left = L
         .Top = t
-        .Right = l + W
+        .Right = L + W
         .Bottom = t + H
     End With
 End Function
