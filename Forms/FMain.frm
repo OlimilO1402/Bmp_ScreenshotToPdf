@@ -11,7 +11,7 @@ Begin VB.Form FMain
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   878
    StartUpPosition =   3  'Windows-Standard
-   Begin VB.CommandButton Command1 
+   Begin VB.CommandButton BtnOpenPDF 
       Caption         =   "Open PDF"
       Height          =   375
       Left            =   5760
@@ -206,7 +206,21 @@ Private m_FocusRect As FocusRect
 Private Declare Function GetCursorPos Lib "user32" (ByRef lpPoint As WinAPIPoint) As Long
 Private OldRect As WndRect
 Private bInit As Boolean
+Private m_PfnPdf As PathFileName
 
+Private Sub Command1_Click()
+
+End Sub
+
+Private Sub BtnOpenPDF_Click()
+    Dim s As String: s = VBA.FileSystem.CurDir$
+    If Len(s) = 0 Then
+        MsgBox "Current dir and file not found: " & vbCrLf & s
+        Exit Sub
+    End If
+    Set m_PfnPdf = MNew.PathFileName(s)
+    m_PfnPdf.Start
+End Sub
 
 'the class SScreen has a function Shot that returns a Screenshot-object
 'm_Screen.Shot As Screenshot
@@ -244,11 +258,11 @@ Private Sub Form_Deactivate()
 End Sub
 
 Private Sub Form_Resize()
-    Dim l As Single: l = 0
+    Dim L As Single: L = 0
     Dim t As Single: t = LBPicList.Top
     Dim W As Single: W = LBPicList.Width
     Dim H As Single: H = Me.ScaleHeight - t
-    If W > 0 And H > 0 Then LBPicList.Move l, t, W, H
+    If W > 0 And H > 0 Then LBPicList.Move L, t, W, H
 End Sub
 
 Private Sub BtnInfo_Click()
@@ -307,7 +321,7 @@ Try: On Error GoTo Catch
     For i = 0 To u
         Set scs = m_ScsList.Item(i)
         Set pic = scs.Picture.StdPicture
-        MPrinter.PaintPictureFit pic, aar.Pt.x, aar.Pt.y, aar.Sz.Width, aar.Sz.Height
+        MPrinter.PaintPictureFit pic, aar.Pt.X, aar.Pt.y, aar.Sz.Width, aar.Sz.Height
         If i < u Then
             Printer.NewPage
         End If
@@ -478,7 +492,7 @@ Private Sub LBPicList_KeyDown(KeyCode As Integer, Shift As Integer)
     End If
 End Sub
 
-Private Sub LBPicList_MouseDown(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub LBPicList_MouseDown(Button As Integer, Shift As Integer, X As Single, y As Single)
     If LBPicList.ListCount > 0 Then
         If Button = MouseButtonConstants.vbRightButton Then
             PopupMenu mnuPopUp
@@ -608,11 +622,11 @@ Private Function GetWndRect() As WndRect
     If Not IsNumeric(TxtW.text) Then Exit Function
     If Not IsNumeric(TxtH.text) Then Exit Function
     
-    Dim x As Long: x = CLng(TxtL.text)
+    Dim X As Long: X = CLng(TxtL.text)
     Dim y As Long: y = CLng(TxtT.text)
     Dim W As Long: W = CLng(TxtW.text)
     Dim H As Long: H = CLng(TxtH.text)
-    Set GetWndRect = MNew.WndRect(MNew.WinAPIRect(x, y, W, H))
+    Set GetWndRect = MNew.WndRect(MNew.WinAPIRect(X, y, W, H))
 End Function
 
 Private Sub LBPicList_Click()
